@@ -77,7 +77,7 @@ contract GovernanceTokenV2 is
     }
 
     receive() external payable {
-        if (msg.value > 0) revert("NO_RECEIVE");
+        if (msg.value > 0) revert CustomError("NO_RECEIVE");
     }
 
     /**

@@ -142,7 +142,7 @@ contract TreasuryV2 is
         uint256 amount
     ) external nonReentrant whenNotPaused onlyRole(MANAGER_ROLE) {
         uint256 vested = releasable();
-        require(vested >= amount, "ERR_NOT_ENOUGH_VESTED");
+        if (amount > vested) revert CustomError({msg: "NOT_ENOUGH_VESTED"});
         _released += amount;
         emit EtherReleased(to, amount);
         Address.sendValue(payable(to), amount);
@@ -159,7 +159,7 @@ contract TreasuryV2 is
         uint256 amount
     ) external whenNotPaused onlyRole(MANAGER_ROLE) {
         uint256 vested = releasable(token);
-        require(vested >= amount, "ERR_NOT_ENOUGH_VESTED");
+        if (amount > vested) revert CustomError({msg: "NOT_ENOUGH_VESTED"});
         _erc20Released[token] += amount;
         emit ERC20Released(token, to, amount);
         SafeERC20.safeTransfer(IERC20(token), to, amount);

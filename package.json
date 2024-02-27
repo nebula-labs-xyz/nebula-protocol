@@ -8,8 +8,7 @@
     "test": "npm run forge:test && npm run forge:script",
     "forge:test": "forge test -vvv --ffi",
     "forge:script": "forge script test/Upgrades.s.sol --ffi",
-    "lint": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --check && solhint 'contracts/**/*.sol'",
-    "lint:fix": "prettier --log-level warn --ignore-path .gitignore '{src,test}/**/*.sol' --write"
+    "solhint": "solhint 'contracts/ecosystem/*.sol'"
   },
   "devDependencies": {
     "@openzeppelin/contracts": "^5.0.0",

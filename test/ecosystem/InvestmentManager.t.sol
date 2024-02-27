@@ -174,9 +174,12 @@ contract InvestmentManagerTest is BasicDeploy {
         assertEq(roundInfo.tokenAllocation, 500_000 ether);
         assertEq(roundInfo.etherInvested, amount);
         assertEq(roundInfo.participants, 1);
-
+        bytes memory expError = abi.encodeWithSignature(
+            "CustomError(string)",
+            "ROUND_CLOSED"
+        );
         vm.prank(address(timelockInstance)); // round closed
-        vm.expectRevert("ERR_ROUND_CLOSED");
+        vm.expectRevert(expError);
         imInstance.cancelRound(0);
     }
 
@@ -192,9 +195,12 @@ contract InvestmentManagerTest is BasicDeploy {
         assertEq(roundInfo.tokenAllocation, 500_000 ether);
         assertEq(roundInfo.etherInvested, amount);
         assertEq(roundInfo.participants, 1);
-
+        bytes memory expError = abi.encodeWithSignature(
+            "CustomError(string)",
+            "CANT_CANCEL_ROUND"
+        );
         vm.prank(address(timelockInstance)); // can't delete the zero round
-        vm.expectRevert("ERR_CANCELLING_ROUND");
+        vm.expectRevert(expError);
         imInstance.cancelRound(0);
     }
 

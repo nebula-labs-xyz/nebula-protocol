@@ -27,6 +27,10 @@ contract GovernanceToken is
     ERC20VotesUpgradeable,
     UUPSUpgradeable
 {
+    error CustomError(string msg);
+    event TGE(uint256 amount);
+    event BridgeMint(address to, uint256 amount);
+    event Upgrade(address indexed src, address indexed implementation);
     bytes32 private constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 private constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
     bytes32 private constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
@@ -34,10 +38,6 @@ contract GovernanceToken is
     uint256 public maxBridge;
     uint8 public version;
     uint8 public tge;
-
-    event TGE(uint256 amount);
-    event BridgeMint(address to, uint256 amount);
-    event Upgrade(address indexed src, address indexed implementation);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -63,7 +63,7 @@ contract GovernanceToken is
         address ecosystem,
         address treasury
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(tge == 0, "ERR_ALREADY_INITIALIZED");
+        if (tge > 0) revert CustomError({msg: "TGE_ALREADY_INITIALIZED"});
         ++tge;
 
         emit TGE(initialSupply);
@@ -77,7 +77,7 @@ contract GovernanceToken is
     }
 
     receive() external payable {
-        if (msg.value > 0) revert();
+        if (msg.value > 0) revert CustomError("NO_RECEIVE");
     }
 
     /**
@@ -101,8 +101,10 @@ contract GovernanceToken is
         address to,
         uint256 amount
     ) external onlyRole(BRIDGE_ROLE) {
-        require(amount <= maxBridge, "ERR_BRIDGE_LIMIT");
-        require(amount + totalSupply() <= initialSupply, "ERR_BRIDGE_PROBLEM");
+        if (amount > maxBridge) revert CustomError({msg: "BRIDGE_LIMIT"});
+        if (amount + totalSupply() > initialSupply)
+            revert CustomError({msg: "BRIDGE_PROBLEM"});
+
         emit BridgeMint(to, amount);
         _mint(to, amount);
     }

@@ -21,6 +21,8 @@ interface IINVESTOR {
         uint8 closed;
     }
 
+    error CustomError(string msg);
+
     receive() external payable;
 
     function pause() external;

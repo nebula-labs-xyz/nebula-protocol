@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../vendor/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-
 contract LINKPriceConsumerV3 {
-    constructor() {}
-
     int256 public price = 14e8;
 
     function setPrice(int256 newPrice) external {

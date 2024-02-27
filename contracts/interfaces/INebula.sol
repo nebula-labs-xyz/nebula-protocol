@@ -27,6 +27,8 @@ interface INEBULA {
     event UpdateLiquidatorThreshold(uint256 amount);
     event Upgrade(address indexed src, address indexed implementation);
 
+    error CustomError(string msg);
+
     struct ProtocolSnapshot {
         uint256 utilization;
         uint256 borrowRate;

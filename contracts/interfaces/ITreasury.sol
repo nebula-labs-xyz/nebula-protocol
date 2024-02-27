@@ -10,6 +10,8 @@ interface ITREASURY {
         uint256 amount
     );
 
+    error CustomError(string msg);
+
     receive() external payable;
 
     /**

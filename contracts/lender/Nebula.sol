@@ -108,7 +108,7 @@ contract Nebula is
     }
 
     receive() external payable {
-        if (msg.value > 0) revert();
+        if (msg.value > 0) revert("ERR_NO_RECEIVE");
     }
 
     /**
@@ -759,7 +759,7 @@ contract Nebula is
         uint256 maxSupplyLimit
     ) external onlyRole(MANAGER_ROLE) {
         if (listedAsset.contains(asset) != true)
-            require(listedAsset.add(asset));
+            require(listedAsset.add(asset), "ERR_ADDING_ASSET");
 
         Asset storage item = assetInfo[asset];
 

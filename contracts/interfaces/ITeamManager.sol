@@ -9,6 +9,8 @@ interface ITEAMMANAGER {
         uint256 amount
     );
 
+    error CustomError(string msg);
+
     receive() external payable;
 
     /**

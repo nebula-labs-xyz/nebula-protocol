@@ -64,7 +64,7 @@ contract Bridge is
     }
 
     receive() external payable {
-        if (msg.value > 0) revert();
+        if (msg.value > 0) revert("ERR_NO_RECEIVE");
     }
 
     /**
@@ -94,7 +94,7 @@ contract Bridge is
         item.name = name;
         item.chainId = chainId;
 
-        require(chainSet.add(chainId));
+        require(chainSet.add(chainId), "ERR_ADDING_CHAIN");
 
         emit AddChain(chainId);
     }
@@ -107,7 +107,7 @@ contract Bridge is
     ) external whenNotPaused onlyRole(MANAGER_ROLE) {
         require(chainSet.contains(chainId), "ERR_NOT_LISTED");
         delete chains[chainId];
-        require(chainSet.remove(chainId));
+        require(chainSet.remove(chainId), "ERR_REMOVING_CHAIN");
         emit RemoveChain(chainId);
     }
 
@@ -186,7 +186,7 @@ contract Bridge is
         item.symbol = symbol;
         item.tokenAddress = token;
 
-        require(tokenSet.add(token));
+        require(tokenSet.add(token), "ERR_LISTING_TOKEN");
 
         emit ListToken(token);
     }
@@ -232,7 +232,10 @@ contract Bridge is
         );
 
         emit Bridged(transactionId, msg.sender, to, token, amount, destChainId);
-        require(tokenContract.transferFrom(msg.sender, address(this), amount));
+        require(
+            tokenContract.transferFrom(msg.sender, address(this), amount),
+            "ERR_TRANSFER_FAILED"
+        );
         tokenContract.burn(amount);
 
         return transactionId;

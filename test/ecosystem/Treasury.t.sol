@@ -118,8 +118,12 @@ contract TreasuryTest is BasicDeploy {
     // }
 
     function test_Revert_ReleaseEther_Branch3() public {
+        bytes memory expError = abi.encodeWithSignature(
+            "CustomError(string)",
+            "NOT_ENOUGH_VESTED"
+        );
         vm.prank(managerAdmin);
-        vm.expectRevert("ERR_NOT_ENOUGH_VESTED");
+        vm.expectRevert(expError);
         treasuryInstance.release(assetRecipient, 101 ether);
     }
 
@@ -187,8 +191,12 @@ contract TreasuryTest is BasicDeploy {
         vm.warp(vmprimer + 548 days); // half-vested
         uint256 vested = treasuryInstance.releasable(address(tokenInstance));
         assertTrue(vested > 0);
+        bytes memory expError = abi.encodeWithSignature(
+            "CustomError(string)",
+            "NOT_ENOUGH_VESTED"
+        );
         vm.prank(managerAdmin);
-        vm.expectRevert("ERR_NOT_ENOUGH_VESTED"); // not enough vested violation
+        vm.expectRevert(expError); // not enough vested violation
         treasuryInstance.release(
             address(tokenInstance),
             assetRecipient,

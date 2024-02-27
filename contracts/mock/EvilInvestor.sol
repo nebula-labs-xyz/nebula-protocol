@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-interface IInvestmentManager {
-    function cancelInvestment() external returns (bool);
+import {IINVESTOR} from "../interfaces/IInvestmentManager.sol";
 
-    function investEther(uint8 round) external payable;
-}
+// interface IInvestmentManager {
+//     function cancelInvestment() external returns (bool);
+
+//     function investEther(uint8 round) external payable;
+// }
 
 contract EvilInvestor {
-    IInvestmentManager private imanager;
-    address weth;
+    IINVESTOR private imanager;
+    address public weth;
 
     constructor(address imanagerAddr, address weth_) {
-        imanager = IInvestmentManager(imanagerAddr);
+        imanager = IINVESTOR(payable(imanagerAddr));
         weth = weth_;
     }
 
@@ -26,6 +28,6 @@ contract EvilInvestor {
     }
 
     function cancel() public {
-        require(imanager.cancelInvestment());
+        require(imanager.cancelInvestment(0), "ERR_CANCEL_INVESTMENT");
     }
 }

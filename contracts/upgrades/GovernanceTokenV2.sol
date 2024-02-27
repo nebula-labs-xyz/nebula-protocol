@@ -27,6 +27,10 @@ contract GovernanceTokenV2 is
     ERC20VotesUpgradeable,
     UUPSUpgradeable
 {
+    error CustomError(string msg);
+    event TGE(uint256 amount);
+    event BridgeMint(address to, uint256 amount);
+    event Upgrade(address indexed src, address indexed implementation);
     bytes32 private constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 private constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
     bytes32 private constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
@@ -35,16 +39,12 @@ contract GovernanceTokenV2 is
     uint8 public version;
     uint8 public tge;
 
-    event TGE(uint256 amount);
-    event BridgeMint(address to, uint256 amount);
-    event Upgrade(address indexed src, address indexed implementation);
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
-    function initializeUUPS(address admin) public initializer {
+    function initializeUUPS(address guardian) public initializer {
         __ERC20_init("Yoda Coin", "YODA");
         __ERC20Burnable_init();
         __ERC20Pausable_init();
@@ -53,48 +53,58 @@ contract GovernanceTokenV2 is
         __ERC20Votes_init();
         __UUPSUpgradeable_init();
 
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, guardian);
         initialSupply = 50_000_000 ether;
         maxBridge = 10_000 ether;
+        version++;
     }
 
     function initializeTGE(
         address ecosystem,
-        address treasury,
-        address timelock
+        address treasury
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(tge == 0, "ERR_ALREADY_INITIALIZED");
+        if (tge > 0) revert CustomError({msg: "TGE_ALREADY_INITIALIZED"});
         ++tge;
 
         emit TGE(initialSupply);
         _mint(address(this), initialSupply);
 
-        uint256 maxTimelock = (initialSupply * 36) / 100;
-        uint256 maxTreasury = (initialSupply * 20) / 100;
+        uint256 maxTreasury = (initialSupply * 56) / 100;
         uint256 maxEcosystem = (initialSupply * 44) / 100;
-        _transfer(address(this), timelock, maxTimelock);
+
         _transfer(address(this), treasury, maxTreasury);
         _transfer(address(this), ecosystem, maxEcosystem);
     }
 
     receive() external payable {
-        if (msg.value > 0) revert();
+        if (msg.value > 0) revert("NO_RECEIVE");
     }
 
+    /**
+     * @dev Pause contract.
+     */
     function pause() public onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
+    /**
+     * @dev Unpause contract.
+     */
     function unpause() public onlyRole(PAUSER_ROLE) {
         _unpause();
     }
 
+    /**
+     * @dev Facilitates Bridge BnM functionality.
+     */
     function bridgeMint(
         address to,
         uint256 amount
-    ) external onlyRole(BRIDGE_ROLE) whenNotPaused {
-        require(amount <= maxBridge, "ERR_BRIDGE_LIMIT");
-        require(amount + totalSupply() <= initialSupply, "ERR_BRIDGE_PROBLEM");
+    ) external onlyRole(BRIDGE_ROLE) {
+        if (amount > maxBridge) revert CustomError({msg: "BRIDGE_LIMIT"});
+        if (amount + totalSupply() > initialSupply)
+            revert CustomError({msg: "BRIDGE_PROBLEM"});
+
         emit BridgeMint(to, amount);
         _mint(to, amount);
     }
@@ -105,8 +115,6 @@ contract GovernanceTokenV2 is
         ++version;
         emit Upgrade(msg.sender, newImplementation);
     }
-
-    // The following functions are overrides required by Solidity.
 
     function _update(
         address from,

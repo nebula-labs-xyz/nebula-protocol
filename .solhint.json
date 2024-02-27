@@ -4,6 +4,7 @@
   "rules": {
     "avoid-suicide": "error",
     "avoid-sha3": "warn",
+    "custom-errors": "warn",
     "func-visibility": ["warn",{"ignoreConstructors":true}]
   }
 }

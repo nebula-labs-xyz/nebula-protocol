@@ -14,7 +14,6 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @custom:oz-upgrades
 contract InvestmentManager is
@@ -125,8 +124,8 @@ contract InvestmentManager is
         uint256 tokenAlloc
     ) external onlyRole(MANAGER_ROLE) {
         supply += tokenAlloc;
-        require(ecosystemToken.balanceOf(address(this)) >= supply);
-
+        uint256 balance = ecosystemToken.balanceOf(address(this));
+        if (balance < supply) revert CustomError("NO_SUPPLY");
         uint64 end = start + duration;
         Round memory item = Round(etherTarget, 0, tokenAlloc, 0, start, end, 1);
         rounds.push(item);
@@ -136,12 +135,12 @@ contract InvestmentManager is
      * @dev Processes ETH investment into a round.
      */
     function investEther(uint8 round_) public payable whenNotPaused {
-        require(round_ < rounds.length, "ERR_INVALID_ROUND");
+        if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         invest(round_, msg.value);
         (bool success, ) = payable(address(wethContract)).call{
             value: msg.value
         }("");
-        require(success, "ERR_TRANSFER_FAILED");
+        require(success, "TRANSFER_FAILED");
     }
 
     /**
@@ -151,24 +150,24 @@ contract InvestmentManager is
         uint8 round_,
         uint256 amount
     ) external whenNotPaused returns (bool success) {
-        require(round_ < rounds.length, "ERR_INVALID_ROUND");
+        if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         invest(round_, amount);
         success = wethContract.transferFrom(msg.sender, address(this), amount);
-        require(success, "ERR_WETH_TRANSFER_FAILED");
+        if (!success) revert CustomError("WETH_TRANSFER_FAILED");
     }
 
     /**
      * @dev Allows investor to get a rufund from an open round.
      */
     function cancelInvestment(uint8 round_) external returns (bool success) {
-        require(round_ < rounds.length, "ERR_INVALID_ROUND");
+        if (round_ > rounds.length) revert CustomError("INVALID_ROUND");
         Round storage current = rounds[round_];
-        require(
-            current.etherInvested < current.etherTarget,
-            "ERR_ROUND_CLOSED"
-        );
+        if (current.etherInvested == current.etherTarget)
+            revert CustomError("ROUND_CLOSED");
+
         uint256 pos = ipos[round_][msg.sender];
-        require(pos > 0, "ERR_INVESTOR_NOT_EXIST");
+        if (pos == 0) revert CustomError("INVESTOR_NOT_EXIST");
+
         investors_[round_][pos - 1] = investors_[round_][
             investors_[round_].length - 1
         ];
@@ -179,25 +178,22 @@ contract InvestmentManager is
         delete investorAllocations[round][msg.sender];
 
         totalAllocation -= item.tokenAmount;
-
         current.etherInvested -= item.etherAmount;
         current.participants--;
 
         success = wethContract.transfer(msg.sender, item.etherAmount);
-        require(success, "ERR_CANCEL_INVESTMENT_FAILED");
+        if (!success) revert CustomError("CANCEL_INVESTMENT_FAILED");
     }
 
     /**
      * @dev Closes an investment round after the round target has been reached.
      */
     function closeRound(uint8 round_) external {
-        require(round_ < rounds.length, "ERR_INVALID_ROUND");
+        if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         Round memory current = rounds[round_];
 
-        require(
-            current.etherInvested == current.etherTarget,
-            "ERR_ROUND_STILL_OPEN"
-        );
+        if (current.etherInvested < current.etherTarget)
+            revert CustomError("ROUND_STILL_OPEN");
 
         deployVestingContracts(round_);
         round++;
@@ -205,27 +201,22 @@ contract InvestmentManager is
         wethContract.withdraw(current.etherInvested);
 
         (bool success, ) = treasury.call{value: current.etherInvested}("");
-        require(success, "ERR_WITHDRAWAL_FAILED");
+        if (!success) revert CustomError("WITHDRAWAL_FAILED");
     }
 
     /**
      * @dev Allows manager to cancel a round if need be, and issues refunds (WETH) to investors.
      */
     function cancelRound(uint8 round_) external onlyRole(MANAGER_ROLE) {
-        require(round_ < rounds.length, "ERR_INVALID_ROUND");
+        if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         Round memory current = rounds[round_];
+        if (current.etherInvested == current.etherTarget)
+            revert CustomError("ROUND_CLOSED");
 
-        require(
-            current.etherInvested < current.etherTarget,
-            "ERR_ROUND_CLOSED"
-        );
         address[] memory investors = investors_[round_];
         uint64 len = uint64(investors.length);
-
-        require(
-            round_ == rounds.length - 1 && round_ > 0,
-            "ERR_CANCELLING_ROUND"
-        );
+        if (round_ != rounds.length - 1 || round_ == 0)
+            revert CustomError("CANT_CANCEL_ROUND");
 
         rounds.pop();
         supply -= current.tokenAllocation;
@@ -240,19 +231,17 @@ contract InvestmentManager is
                 investors[i],
                 item.etherAmount
             );
-            require(success, "ERR_WETH_TRANSFER_FAILED");
+            if (!success) revert CustomError("WETH_TRANSFER_FAILED");
         }
     }
 
     function invest(uint8 round_, uint256 amount) internal {
         Round storage item = rounds[round_];
 
-        require(amount >= item.etherTarget / 50, "ERR_INVALID_AMOUNT");
-
-        require(
-            item.etherInvested + amount <= item.etherTarget,
-            "ERR_ROUND_OVERSUBSCRIBED"
-        );
+        if (amount < item.etherTarget / 50)
+            revert CustomError("INVALID_AMOUNT");
+        if (item.etherInvested + amount > item.etherTarget)
+            revert CustomError("ROUND_OVERSUBSCRIBED");
 
         uint256 pos = ipos[round_][msg.sender];
         if (pos == 0) {
@@ -288,17 +277,18 @@ contract InvestmentManager is
                 uint64(730 days) // duration after cliff
             );
             vestingContracts[round][investors[i]] = address(vestingContract);
-            require(
-                ecosystemToken.transfer(address(vestingContract), alloc),
-                "ERR_ALLOCATION_TRANSFER_FAILED"
+            bool success = ecosystemToken.transfer(
+                address(vestingContract),
+                alloc
             );
+            if (!success) revert CustomError("ALLOCATION_TRANSFER_FAILED");
         }
     }
 
     function withdrawTokens(uint256 amount) internal {
         require(
             ecosystemToken.transfer(treasury, amount),
-            "ERR_ALLOCATION_TRANSFER_FAILED"
+            "ALLOCATION_TRANSFER_FAILED"
         );
     }
 

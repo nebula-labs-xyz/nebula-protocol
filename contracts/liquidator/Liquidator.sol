@@ -15,19 +15,19 @@ pragma solidity ^0.8.20;
  * @disclaimer !!! USE AT YOUR OWN RISK !!!
  * @custom:security-contact security@nebula-labs.xyz
  */
-import "../interfaces/INebula.sol";
-import "../vendor/@balancer-labs/v2-interfaces/contracts/vault/IVault.sol";
-import "../vendor/@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol";
-import "../vendor/@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {INEBULA} from "../interfaces/INebula.sol";
+import {IVault} from "../vendor/@balancer-labs/v2-interfaces/contracts/vault/IVault.sol";
+import {IFlashLoanRecipient} from "../vendor/@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol";
+import {ISwapRouter} from "../vendor/@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
-    IERC20 private immutable usdcContract;
-    IVault private immutable balancerVault; // 0xBA12222222228d8Ba445958a75a0704d566BF2C8
-    INEBULA private immutable nebulaContract;
-    IERC20 private immutable govTokenContract;
-    ISwapRouter private immutable uniswapRouter;
+    IERC20 private usdcContract;
+    IVault private balancerVault; // 0xBA12222222228d8Ba445958a75a0704d566BF2C8
+    INEBULA private nebulaContract;
+    IERC20 private govTokenContract;
+    ISwapRouter private uniswapRouter;
 
     constructor(
         address usdc,
@@ -47,7 +47,7 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
         if (nebulaContract.isLiquidatable(account)) {
             require(
                 govTokenContract.balanceOf(address(this)) >= 20_000 ether,
-                "ERR_INSUFFIENT_LIQUIDATOR_PRIVILEDGE"
+                "ERR_INSUFFIENT_LIQUIDATOR_TOKENS"
             );
 
             uint256 debt = nebulaContract.getAccruedDebt(account);
@@ -75,7 +75,7 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
         uint256[] memory feeAmounts,
         bytes memory userData
     ) external override {
-        require(msg.sender == address(balancerVault));
+        require(msg.sender == address(balancerVault), "ERR_ACCESS_CONTROL");
         address target = address(uint160(bytes20(userData)));
         address[] memory assets = nebulaContract.getUserCollateralAssets(
             target
@@ -118,7 +118,7 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
             }
         }
 
-        require(recievedBase > amounts[0] + feeAmounts[0]);
+        require(recievedBase > amounts[0] + feeAmounts[0], "ERR_PROFIT_TARGET");
         SafeERC20.safeTransfer(
             tokens[0],
             address(balancerVault),

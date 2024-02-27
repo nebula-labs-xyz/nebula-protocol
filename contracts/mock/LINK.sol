@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract LINK is ERC20 {
     constructor() ERC20("Chainlink", "LINK") {}
@@ -10,7 +10,7 @@ contract LINK is ERC20 {
         _mint(to, 20000e6);
     }
 
-    function mint(address to, uint amount) public {
+    function mint(address to, uint256 amount) public {
         _mint(to, amount);
     }
 }

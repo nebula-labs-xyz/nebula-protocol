@@ -106,7 +106,11 @@ contract TeamManagerTest is BasicDeploy {
 
     function test_Revert_addTeamMember_Branch3() public {
         vm.prank(address(timelockInstance));
-        vm.expectRevert("ERR_SUPPLY_LIMIT");
+        bytes memory expError = abi.encodeWithSignature(
+            "CustomError(string)",
+            "SUPPLY_LIMIT"
+        );
+        vm.expectRevert(expError);
         tmInstance.addTeamMember(managerAdmin, 10_000_000 ether);
     }
 

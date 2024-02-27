@@ -16,6 +16,8 @@ interface IBRIDGE {
         uint256 destChainId
     );
 
+    error CustomError(string msg);
+
     struct Token {
         string name;
         string symbol;

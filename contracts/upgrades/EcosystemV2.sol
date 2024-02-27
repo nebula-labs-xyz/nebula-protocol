@@ -75,49 +75,57 @@ contract EcosystemV2 is
     }
 
     receive() external payable {
-        if (msg.value > 0) revert();
+        if (msg.value > 0) revert("ERR_NO_RECEIVE");
     }
 
+    /**
+     * @dev Pause contract.
+     */
     function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
+    /**
+     * @dev Unpause contract.
+     */
     function unpause() external onlyRole(PAUSER_ROLE) {
         _unpause();
     }
 
+    /**
+     * @dev Performs Airdrop.
+     */
     function airdrop(
         address[] calldata winners,
         uint256 amount
-    ) external onlyRole(MANAGER_ROLE) whenNotPaused {
-        require(amount >= 1 ether, "ERR_INVALID_AMOUNT");
+    ) external whenNotPaused onlyRole(MANAGER_ROLE) {
+        if (amount < 1 ether) revert CustomError("INVALID_AMOUNT");
         uint256 len = winners.length;
-        require(len <= 5000, "ERR_GAS_LIMIT");
-        require(
-            totalAirDrop + len * amount <= airdropSupply,
-            "ERR_AIRDROP_LIMIT"
-        );
+        if (len > 5000) revert CustomError("GAS_LIMIT");
+        if (totalAirDrop + len * amount > airdropSupply)
+            revert CustomError("AIRDROP_SUPPLY_LIMIT");
 
         totalAirDrop += len * amount;
         emit AirDrop(winners, amount);
         for (uint256 i = 0; i < len; ++i) {
-            // if (winners[i] == address(0)) continue;
-            // if (winners[i].balance < 0.2e18) continue;
-            require(ecosystemToken.transfer(winners[i], amount), "ERR_ATF");
+            bool success = ecosystemToken.transfer(winners[i], amount);
+            if (!success) revert CustomError("AIRDROP_TRANSFER_FAILED");
         }
     }
 
+    /**
+     * @dev Performs Airdrop verification.
+     */
     function verifyAirdrop(
         address[] calldata winners,
         uint256 amount
     ) public view returns (bool) {
-        require(amount >= 1 ether, "ERR_INVALID_AMOUNT");
+        if (amount < 1 ether) revert CustomError("INVALID_AMOUNT");
         uint256 len = winners.length;
-        require(len <= 5000, "ERR_GAS_LIMIT");
-        require(
-            totalAirDrop + len * amount <= airdropSupply,
-            "ERR_AIRDROP_LIMIT"
-        );
+        if (len > 5000) revert CustomError("GAS_LIMIT");
+        if (totalAirDrop + len * amount > airdropSupply)
+            revert CustomError("AIRDROP_SUPPLY_LIMIT");
+
         for (uint256 i = 0; i < len; ++i) {
             if (winners[i] == address(0)) return false;
             if (winners[i].balance < 0.2e18) return false;
@@ -125,44 +133,52 @@ contract EcosystemV2 is
         return true;
     }
 
+    /**
+     * @dev Reward functionality for the Nebula Protocol.
+     */
     function reward(
         address to,
         uint256 amount
-    ) external onlyRole(REWARDER_ROLE) whenNotPaused {
-        require(amount > 0, "ERR_INVALID_AMOUNT");
-        require(amount <= maxReward, "ERR_REWARD_LIMIT");
-        require(totalReward + amount <= rewardSupply, "ERR_SUPPLY_LIMIT");
+    ) external whenNotPaused onlyRole(REWARDER_ROLE) {
+        if (amount == 0) revert CustomError("INVALID_AMOUNT");
+        if (amount > maxReward) revert CustomError("REWARD_LIMIT");
+        if (totalReward + amount > rewardSupply)
+            revert CustomError("REWARD_SUPPLY_LIMIT");
+
         totalReward += amount;
         emit Reward(to, amount);
-        require(
-            ecosystemToken.transfer(to, amount),
-            "ERR_REWARD_TRANSFER_FAILED"
-        );
+        bool success = ecosystemToken.transfer(to, amount);
+        if (!success) revert CustomError("REWARD_TRANSFER_FAILED");
     }
 
-    function burn(uint256 amount) external onlyRole(BURNER_ROLE) whenNotPaused {
-        require(amount > 0, "ERR_INVALID_AMOUNT");
-        require(totalReward + amount <= rewardSupply, "ERR_SUPPLY_LIMIT");
-        require(amount <= maxBurn, "ERR_BURN_LIMIT");
+    /**
+     * @dev Enables Burn functionality for the DAO.
+     */
+    function burn(uint256 amount) external whenNotPaused onlyRole(BURNER_ROLE) {
+        if (amount == 0) revert CustomError("INVALID_AMOUNT");
+        if (totalReward + amount > rewardSupply)
+            revert CustomError("BURN_SUPPLY_LIMIT");
+
+        if (amount > maxBurn) revert CustomError("MAX_BURN_LIMIT");
         rewardSupply -= amount;
         emit Burn(amount);
         ecosystemToken.burn(amount);
     }
 
+    /**
+     * @dev Creates and funds new vesting contract for a new partner.
+     */
     function addPartner(
         address partner,
         uint256 amount
-    ) external onlyRole(MANAGER_ROLE) whenNotPaused {
-        require(partner != address(0), "ERR_ADDRESS_ZERO");
-        require(vestingContracts[partner] == address(0), "ERR_PARTNER_EXISTS");
-        require(
-            amount <= partnershipSupply / 2 && amount >= 100 ether,
-            "ERR_INVALID AMOUNT"
-        );
-        require(
-            totalPartnership + amount <= partnershipSupply,
-            "ERR_AMOUNT_EXCEEDS_SUPPLY"
-        );
+    ) external whenNotPaused onlyRole(MANAGER_ROLE) {
+        if (partner == address(0)) revert CustomError("INVALID_ADDRESS");
+        if (vestingContracts[partner] != address(0))
+            revert CustomError("PARTNER_EXISTS");
+        if (amount > partnershipSupply / 2 || amount < 100 ether)
+            revert CustomError("INVALID_AMOUNT");
+        if (totalPartnership + amount > partnershipSupply)
+            revert CustomError("AMOUNT_EXCEEDS_SUPPLY");
 
         totalPartnership += amount;
 
@@ -175,9 +191,10 @@ contract EcosystemV2 is
         vestingContracts[partner] = address(vestingContract);
 
         emit AddPartner(partner, address(vestingContract), amount);
-        require(
-            ecosystemToken.transfer(address(vestingContract), amount),
-            "ERR_ALLOCATION_TRANSFER_FAILED"
+        bool success = ecosystemToken.transfer(
+            address(vestingContract),
+            amount
         );
+        if (!success) revert CustomError("ALLOCATION_TRANSFER_FAILED");
     }
 }

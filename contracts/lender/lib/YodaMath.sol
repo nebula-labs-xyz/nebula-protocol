@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-v3.0
-// Derived from https://github.com/dapphub/dsmath
+// Derived from https://github.com/dapphub/ds-math/
 pragma solidity ^0.8.20;
 import {IYODAMATH} from "../../interfaces/IYodaMath.sol";
 

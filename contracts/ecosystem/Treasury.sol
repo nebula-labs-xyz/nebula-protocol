@@ -6,7 +6,7 @@ pragma solidity ^0.8.20;
  * @notice Vesting contract: initialRelease + (36 month duration)
  * @notice Offers flexible withdrawal schedule (gas efficient)
  * @author Nebula Labs Inc
- * @custom:security-contact security@nebula-labs.xyz
+ * @custom:security-contact security@nebula-labs.xysz
  */
 
 import {ITREASURY} from "../interfaces/ITreasury.sol";
@@ -143,7 +143,7 @@ contract Treasury is
         uint256 amount
     ) external nonReentrant whenNotPaused onlyRole(MANAGER_ROLE) {
         uint256 vested = releasable();
-        require(vested >= amount, "ERR_NOT_ENOUGH_VESTED");
+        if (amount > vested) revert CustomError({msg: "NOT_ENOUGH_VESTED"});
         _released += amount;
         emit EtherReleased(to, amount);
         Address.sendValue(payable(to), amount);
@@ -160,7 +160,7 @@ contract Treasury is
         uint256 amount
     ) external whenNotPaused onlyRole(MANAGER_ROLE) {
         uint256 vested = releasable(token);
-        require(vested >= amount, "ERR_NOT_ENOUGH_VESTED");
+        if (amount > vested) revert CustomError({msg: "NOT_ENOUGH_VESTED"});
         _erc20Released[token] += amount;
         emit ERC20Released(token, to, amount);
         SafeERC20.safeTransfer(IERC20(token), to, amount);

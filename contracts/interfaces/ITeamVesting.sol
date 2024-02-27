@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 interface ITEAMVESTING {
     event Cancelled(uint256 amount);
     event ERC20Released(address indexed token, uint256 amount);
+    error CustomError(string msg);
 
     receive() external payable;
 

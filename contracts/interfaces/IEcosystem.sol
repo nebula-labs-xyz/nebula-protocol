@@ -12,6 +12,8 @@ interface IECOSYSTEM {
         uint256 amount
     );
 
+    error CustomError(string msg);
+
     /**
      * @dev Getter for the total reward supply.
      */

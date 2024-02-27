@@ -556,7 +556,14 @@ contract NebulaTest is BasicDeploy {
         uint256 amount = nebulaInstance.getAccruedDebt(bob);
         vm.startPrank(bob);
         usdcInstance.approve(address(nebulaInstance), amount);
-        vm.expectRevert("ERC20: transfer amount exceeds balance");
+        bytes memory expError = abi.encodeWithSignature(
+            "ERC20InsufficientBalance(address,uint256,uint256)",
+            bob,
+            10_000e6,
+            amount
+        );
+        // ERC20InsufficientBalance(0x0000000000000000000000000000000009999992, 10000000000 [1e10], 10003288212 [1e10])
+        vm.expectRevert(expError);
         nebulaInstance.repay(11_000e6);
     }
 
@@ -656,9 +663,15 @@ contract NebulaTest is BasicDeploy {
         vm.warp(367 days);
         vm.roll(367 days);
         uint256 amount = nebulaInstance.getAccruedDebt(bob);
+        bytes memory expError = abi.encodeWithSignature(
+            "ERC20InsufficientBalance(address,uint256,uint256)",
+            bob,
+            10_000e6,
+            amount
+        );
         vm.startPrank(bob);
         usdcInstance.approve(address(nebulaInstance), amount);
-        vm.expectRevert("ERC20: transfer amount exceeds balance");
+        vm.expectRevert(expError);
         nebulaInstance.repayMax();
         vm.stopPrank();
     }

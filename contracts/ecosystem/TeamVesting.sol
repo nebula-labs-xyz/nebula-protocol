@@ -12,17 +12,16 @@ pragma solidity ^0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITEAMVESTING} from "../interfaces/ITeamVesting.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract TeamVesting is ITEAMVESTING, Context, Ownable {
     IERC20 private tokenContract;
     mapping(address token => uint256) private _erc20Released;
-    uint64 private immutable _start;
-    uint64 private immutable _duration;
-    address private immutable _timelock;
-    address private immutable _token;
+    uint64 private _start;
+    uint64 private _duration;
+    address private _timelock;
+    address private _token;
 
     /**
      * @dev Sets the owner to beneficiary address, the start timestamp and the
@@ -47,7 +46,7 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable {
      */
 
     receive() external payable {
-        if (msg.value > 0) revert();
+        if (msg.value > 0) revert CustomError("ERR_NO_RECEIVE");
     }
 
     /**
@@ -132,7 +131,7 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable {
      *      Release vested amount and refund the remainder to timelock.
      */
     function cancelContract() external {
-        require(msg.sender == _timelock, "ERR_ACCESS_CONTROL");
+        if (msg.sender != _timelock) revert CustomError("UNAUTHORIZED");
         release();
         uint256 remainder = tokenContract.balanceOf(address(this));
         emit Cancelled(remainder);

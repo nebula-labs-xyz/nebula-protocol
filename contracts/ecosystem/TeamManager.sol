@@ -65,7 +65,7 @@ contract TeamManager is
     }
 
     receive() external payable {
-        if (msg.value > 0) revert();
+        if (msg.value > 0) revert CustomError("ERR_NO_RECEIVE");
     }
 
     /**
@@ -89,7 +89,8 @@ contract TeamManager is
         address beneficiary,
         uint256 amount
     ) external whenNotPaused onlyRole(MANAGER_ROLE) returns (bool success) {
-        require(totalAllocation + amount <= supply, "ERR_SUPPLY_LIMIT");
+        if (totalAllocation + amount > supply)
+            revert CustomError("SUPPLY_LIMIT");
         totalAllocation += amount;
 
         TeamVesting vestingContract = new TeamVesting(
@@ -105,6 +106,6 @@ contract TeamManager is
 
         emit AddTeamMember(beneficiary, address(vestingContract), amount);
         success = ecosystemToken.transfer(address(vestingContract), amount);
-        require(success, "ERR_ALLOCATION_TRANSFER_FAILED");
+        if (!success) revert CustomError("ERR_ALLOCATION_TRANSFER_FAILED");
     }
 }

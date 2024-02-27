@@ -9,8 +9,6 @@ contract GovernanceTokenTest is BasicDeploy {
     event BridgeMint(address to, uint256 amount);
     event TGE(uint256 amount);
 
-    error AccessControlUnauthorizedAccount(address account, bytes32 neededRole);
-
     uint256 internal vmprimer = 365 days;
 
     function setUp() public {
@@ -82,8 +80,13 @@ contract GovernanceTokenTest is BasicDeploy {
     }
 
     function test_Revert_InitializeTGE_Branch2() public {
+        bytes memory expError = abi.encodeWithSignature(
+            "CustomError(string)",
+            "TGE_ALREADY_INITIALIZED"
+        );
         vm.prank(guardian);
-        vm.expectRevert("ERR_ALREADY_INITIALIZED"); // TGE already triggered
+        vm.expectRevert(expError);
+        // vm.expectRevert("ALREADY_INITIALIZED"); // TGE already triggered
         tokenInstance.initializeTGE(
             address(ecoInstance),
             address(treasuryInstance)
@@ -223,8 +226,12 @@ contract GovernanceTokenTest is BasicDeploy {
         vm.prank(guardian);
         tokenInstance.grantRole(BRIDGE_ROLE, bridge);
         // try to bridge
+        bytes memory expError = abi.encodeWithSignature(
+            "CustomError(string)",
+            "BRIDGE_LIMIT"
+        );
         vm.prank(bridge);
-        vm.expectRevert("ERR_BRIDGE_LIMIT"); // exceeded bridge limit
+        vm.expectRevert(expError); // exceeded bridge limit
         tokenInstance.bridgeMint(alice, 10001 ether);
     }
 
@@ -241,9 +248,13 @@ contract GovernanceTokenTest is BasicDeploy {
         // give proper access
         vm.prank(guardian);
         tokenInstance.grantRole(BRIDGE_ROLE, bridge);
+        bytes memory expError = abi.encodeWithSignature(
+            "CustomError(string)",
+            "BRIDGE_PROBLEM"
+        );
         // try to bridge
         vm.prank(bridge);
-        vm.expectRevert("ERR_BRIDGE_PROBLEM"); // compromised bridge
+        vm.expectRevert(expError); // compromised bridge
         tokenInstance.bridgeMint(alice, 5001 ether);
     }
 }

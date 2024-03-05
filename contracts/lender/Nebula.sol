@@ -67,6 +67,7 @@ contract Nebula is
     mapping(address => uint256) internal loanAccrueTimeIndex;
     mapping(address => uint256) internal liquidityAccrueTimeIndex;
     mapping(address => uint256) internal totalCollateral;
+    mapping(address => uint256) internal ucaPos;
     mapping(address => address[]) internal userCollateralAssets;
     mapping(address => mapping(address => uint256)) internal collateral;
 
@@ -202,9 +203,11 @@ contract Nebula is
             uint256 duration = block.timestamp -
                 liquidityAccrueTimeIndex[msg.sender];
             uint256 reward = (targetReward * duration) / rewardInterval;
+            uint256 maxReward = ecosystemContract.maxReward();
+            uint256 target = reward > maxReward ? maxReward : reward;
             delete liquidityAccrueTimeIndex[msg.sender];
-            emit Reward(msg.sender, reward);
-            ecosystemContract.reward(msg.sender, reward);
+            emit Reward(msg.sender, target);
+            ecosystemContract.reward(msg.sender, target);
         }
     }
 
@@ -595,6 +598,7 @@ contract Nebula is
                 "ERR_TOO_MANY_ASSETS"
             );
             userCollateralAssets[msg.sender].push(asset);
+            ucaPos[asset] = userCollateralAssets[msg.sender].length - 1;
         }
 
         collateral[msg.sender][asset] += amount;
@@ -622,8 +626,15 @@ contract Nebula is
         totalCollateral[asset] -= amount;
         uint256 cv = creditValue(msg.sender);
         require(cv >= loans[msg.sender], "ERR_UNCOLLATERALIZED_LOAN");
-        if (collateral[msg.sender][asset] == 0)
-            updateUserCollateralAssets(msg.sender);
+        if (collateral[msg.sender][asset] == 0) {
+            // updateUserCollateralAssets(msg.sender);
+            uint256 ipos = ucaPos[asset];
+            uint256 len = userCollateralAssets[msg.sender].length;
+            userCollateralAssets[msg.sender][ipos] = userCollateralAssets[
+                msg.sender
+            ][len - 1];
+            userCollateralAssets[msg.sender].pop();
+        }
 
         IERC20 assetContract = IERC20(asset);
         emit WithdrawCollateral(msg.sender, asset, amount);
@@ -772,17 +783,6 @@ contract Nebula is
         item.maxSupplyThreshold = maxSupplyLimit;
 
         emit UpdateCollateralConfig(asset);
-    }
-
-    function updateUserCollateralAssets(address src) internal {
-        address[] memory assets = listedAsset.values();
-        uint256 len = assets.length;
-        delete userCollateralAssets[src];
-
-        for (uint256 i = 0; i < len; ++i) {
-            if (collateral[msg.sender][assets[i]] > 0)
-                userCollateralAssets[src].push(assets[i]);
-        }
     }
 
     // The following functions are overrides required by Solidity.

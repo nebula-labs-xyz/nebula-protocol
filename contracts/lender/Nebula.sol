@@ -18,9 +18,8 @@ pragma solidity ^0.8.23;
 import {YodaMath} from "./lib/YodaMath.sol";
 import {INEBULA} from "../interfaces/INebula.sol";
 import {IECOSYSTEM} from "../interfaces/IEcosystem.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {SafeERC20 as TH} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20, SafeERC20 as TH} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -771,26 +770,17 @@ contract Nebula is
         }
     }
 
-    /**
-     * @dev See {ERC20-decimals}.
-     * @inheritdoc ERC20Upgradeable
-     */
+    /// @inheritdoc ERC20Upgradeable
     function decimals() public view virtual override(ERC20Upgradeable, INEBULA) returns (uint8) {
         return IERC20Metadata(address(baseContract)).decimals();
     }
 
-    /**
-     * @dev See {ERC20-balanceOf}.
-     * @inheritdoc ERC20Upgradeable
-     */
+    /// @inheritdoc ERC20Upgradeable
     function balanceOf(address src) public view virtual override(ERC20Upgradeable, INEBULA) returns (uint256) {
         return super.balanceOf(src);
     }
 
-    /**
-     * @dev See {ERC20-totalSupply}.
-     * @inheritdoc ERC20Upgradeable
-     */
+    /// @inheritdoc ERC20Upgradeable
     function totalSupply() public view virtual override(ERC20Upgradeable, INEBULA) returns (uint256) {
         return super.totalSupply();
     }

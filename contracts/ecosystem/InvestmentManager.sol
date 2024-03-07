@@ -313,8 +313,6 @@ contract InvestmentManager is
             );
             vestingContracts[round][investors[i]] = address(vestingContract);
             TH.safeTransfer(ecosystemToken, address(vestingContract), alloc);
-            // bool success = ecosystemToken.transfer(address(vestingContract), alloc);
-            // if (!success) revert CustomError("ALLOCATION_TRANSFER_FAILED");
         }
     }
 

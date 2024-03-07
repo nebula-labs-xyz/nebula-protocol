@@ -11,7 +11,7 @@ import {IYODA} from "../interfaces/IYODA.sol";
 import {IWETH9} from "../interfaces/IWETH9.sol";
 import {IINVESTOR} from "../interfaces/IInvestmentManager.sol";
 import {InvestorVesting} from "./InvestorVesting.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
@@ -137,12 +137,10 @@ contract InvestmentManager is
      * @param round_ round number in question
      * @param amount amount of ETH to invest
      */
-    function investWETH(uint8 round_, uint256 amount) external whenNotPaused  {
+    function investWETH(uint8 round_, uint256 amount) external whenNotPaused {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         invest(round_, amount);
-        SafeERC20.safeTransferFrom(wethContract, msg.sender, address(this), amount);
-        // success = wethContract.transferFrom(msg.sender, address(this), amount);
-        // if (!success) revert CustomError("WETH_TRANSFER_FAILED");
+        SafeERC20.safeTransferFrom(IERC20(address(wethContract)), msg.sender, address(this), amount);
     }
 
     /**

@@ -368,7 +368,7 @@ contract NebulaV2 is
         loanInterestAccrueIndex += balance - loans[src];
         delete loans[src];
 
-        baseContract.transferFrom(msg.sender, address(this), balance + liquidationFee);
+        TH.safeTransferFrom(baseContract, msg.sender, address(this), balance + liquidationFee);
 
         address[] memory assets = userCollateralAssets[src];
         uint256 len = assets.length;

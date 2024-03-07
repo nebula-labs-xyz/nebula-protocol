@@ -110,13 +110,15 @@ contract Ecosystem is IECOSYSTEM, Initializable, PausableUpgradeable, AccessCont
     function airdrop(address[] calldata winners, uint256 amount) external whenNotPaused onlyRole(MANAGER_ROLE) {
         if (amount < 1 ether) revert CustomError("INVALID_AMOUNT");
         uint256 len = winners.length;
-        if (len > 5000) revert CustomError("GAS_LIMIT");
+
         if (issuedAirDrop + len * amount > airdropSupply) {
             revert CustomError("AIRDROP_SUPPLY_LIMIT");
         }
 
         issuedAirDrop += len * amount;
         emit AirDrop(winners, amount);
+
+        if (len > 5000) revert CustomError("GAS_LIMIT");
         for (uint256 i = 0; i < len; ++i) {
             bool success = ecosystemToken.transfer(winners[i], amount);
             if (!success) revert CustomError("AIRDROP_TRANSFER_FAILED");
@@ -194,11 +196,12 @@ contract Ecosystem is IECOSYSTEM, Initializable, PausableUpgradeable, AccessCont
     function verifyAirdrop(address[] calldata winners, uint256 amount) external view returns (bool) {
         if (amount < 1 ether) revert CustomError("INVALID_AMOUNT");
         uint256 len = winners.length;
-        if (len > 5000) revert CustomError("GAS_LIMIT");
+
         if (issuedAirDrop + len * amount > airdropSupply) {
             revert CustomError("AIRDROP_SUPPLY_LIMIT");
         }
 
+        if (len > 5000) revert CustomError("GAS_LIMIT");
         for (uint256 i = 0; i < len; ++i) {
             if (winners[i] == address(0)) return false;
             if (winners[i].balance < 0.2e18) return false;

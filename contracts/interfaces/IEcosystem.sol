@@ -99,6 +99,4 @@ interface IECOSYSTEM {
      * Emits a {AddPartner} event.
      */
     function addPartner(address account, uint256 amount) external;
-
-    receive() external payable;
 }

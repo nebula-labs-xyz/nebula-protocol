@@ -66,14 +66,6 @@ contract EcosystemV2 is
     }
 
     /**
-     * @notice solidity receive function
-     * @dev reverts on receive ETH
-     */
-    receive() external payable {
-        if (msg.value > 0) revert CustomError("NO_RECEIVE");
-    }
-
-    /**
      * @dev Initializes the ecosystem contract
      * @param token token address
      * @param defaultAdmin admin address

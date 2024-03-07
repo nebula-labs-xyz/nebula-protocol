@@ -53,14 +53,6 @@ contract TeamManager is
     }
 
     /**
-     * @notice solidity receive function
-     * @dev reverts on receive ETH
-     */
-    receive() external payable {
-        if (msg.value > 0) revert CustomError("NO_RECEIVE");
-    }
-
-    /**
      * @dev Initializes the this contract
      * @param token ecosystem token address
      * @param timelock_ timelock address

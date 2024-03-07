@@ -71,13 +71,13 @@ contract Bridge is IBRIDGE, Initializable, PausableUpgradeable, AccessControlUpg
         emit Upgrade(msg.sender, newImplementation);
     }
 
-    /**
-     * @notice solidity receive function
-     * @dev reverts on receive ETH
-     */
-    receive() external payable {
-        if (msg.value > 0) revert("ERR_NO_RECEIVE");
-    }
+    // /**
+    //  * @notice solidity receive function
+    //  * @dev reverts on receive ETH
+    //  */
+    // receive() external payable {
+    //     if (msg.value > 0) revert("ERR_NO_RECEIVE");
+    // }
 
     /**
      * @dev Pause contract.

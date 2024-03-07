@@ -51,7 +51,9 @@ contract Treasury is
     }
 
     /// @notice solidity receive function
-    receive() external payable virtual {}
+    receive() external payable virtual {
+        emit Received(msg.sender, msg.value);
+    }
 
     /**
      * @dev Initializes the UUPS contract

@@ -70,14 +70,6 @@ contract GovernanceTokenV2 is
     }
 
     /**
-     * @notice solidity receive function
-     * @dev reverts on receive ETH
-     */
-    receive() external payable {
-        if (msg.value > 0) revert CustomError("NO_RECEIVE");
-    }
-
-    /**
      * @dev Initializes the UUPS contract
      * @param guardian admin address
      */

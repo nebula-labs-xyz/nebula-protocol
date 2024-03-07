@@ -7,8 +7,6 @@ interface ITEAMVESTING {
 
     error CustomError(string msg);
 
-    receive() external payable;
-
     /**
      * @dev Getter for the start timestamp.
      */

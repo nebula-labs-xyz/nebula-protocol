@@ -7,8 +7,6 @@ interface ITEAMMANAGER {
 
     error CustomError(string msg);
 
-    receive() external payable;
-
     /**
      * @dev Getter for the UUPS version, incremented each time an upgrade occurs.
      */

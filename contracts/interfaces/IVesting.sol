@@ -11,9 +11,6 @@ interface IVESTING {
     /// @notice  Custom error used for errors
     error CustomError(string msg);
 
-    /// @notice  solidity receive function
-    receive() external payable;
-
     /// @dev Getter for the start timestamp
     /// @return start timestamp
     function start() external returns (uint256);

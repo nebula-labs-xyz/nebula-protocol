@@ -108,14 +108,6 @@ contract NebulaV2 is
     }
 
     /**
-     * @notice solidity receive function
-     * @dev reverts on receive ETH
-     */
-    receive() external payable {
-        if (msg.value > 0) revert("ERR_NO_RECEIVE");
-    }
-
-    /**
      * @dev Initializes the UUPS contract
      * @param usdc USDC address
      * @param govToken governance token address

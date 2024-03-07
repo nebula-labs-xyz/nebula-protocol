@@ -53,14 +53,6 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
     }
 
     /**
-     * @notice solidity receive function
-     * @dev reverts on receive ETH
-     */
-    receive() external payable {
-        if (msg.value > 0) revert CustomError("NO_RECEIVE");
-    }
-
-    /**
      * @dev Allows the DAO to cancel the contract in case the team member is fired.
      *      Release vested amount and refund the remainder to timelock.
      */

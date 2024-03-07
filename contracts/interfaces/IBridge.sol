@@ -31,8 +31,6 @@ interface IBRIDGE {
         uint256 destChainId;
     }
 
-    receive() external payable;
-
     function transactionId() external view returns (uint256);
 
     function chainCount(uint256 chainId) external view returns (uint256);

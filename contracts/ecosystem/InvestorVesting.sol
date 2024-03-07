@@ -42,14 +42,6 @@ contract InvestorVesting is IVESTING, Context, Ownable2Step {
     }
 
     /**
-     * @notice solidity receive function
-     * @dev reverts on receive ETH
-     */
-    receive() external payable {
-        if (msg.value > 0) revert CustomError("NO_RECEIVE");
-    }
-
-    /**
      * @dev Release the tokens that have already vested.
      *
      * Emits a {ERC20Released} event.

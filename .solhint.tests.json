@@ -5,6 +5,7 @@
     "constructor-syntax": "warn",
     "quotes": ["error", "double"],
     "func-visibility": ["warn", { "ignoreConstructors": true }],
+    "func-name-mixedcase": "off",
     "not-rely-on-time": "off",
     "no-inline-assembly": "off",
     "no-empty-blocks": "warn",

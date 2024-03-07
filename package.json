@@ -34,7 +34,7 @@
   "devDependencies": {
     "@commitlint/cli": "19.0.3",
     "@commitlint/config-conventional": "19.0.3",
-    "@defi-wonderland/natspec-smells": "1.1.1",
+    "@defi-wonderland/natspec-smells": "1.0.3",
     "@openzeppelin/contracts": "^5.0.2",
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
     "@openzeppelin/upgrades-core": "^1.32.3",

@@ -27,6 +27,7 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {AggregatorV3Interface} from "../vendor/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {ERC20PausableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PausableUpgradeable.sol";
 
@@ -37,6 +38,7 @@ contract NebulaV2 is
     ERC20Upgradeable,
     ERC20PausableUpgradeable,
     AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable,
     UUPSUpgradeable,
     YodaMath
 {
@@ -173,7 +175,7 @@ contract NebulaV2 is
      * @dev Supply USDC liquidity to protocol, and receive Nebula tokens.
      * @param amount to be supplied in USDC (6 decimals)
      */
-    function supplyLiquidity(uint256 amount) external {
+    function supplyLiquidity(uint256 amount) external nonReentrant {
         require(baseContract.balanceOf(msg.sender) >= amount, "ERR_INSUFFICIENT_BALANCE");
         uint256 total = baseContract.balanceOf(address(this)) + totalBorrow;
         if (total == 0) total = WAD;
@@ -188,14 +190,14 @@ contract NebulaV2 is
         _mint(msg.sender, value);
 
         emit SupplyLiquidity(msg.sender, amount);
-        require(baseContract.transferFrom(msg.sender, address(this), amount), "ERR_TRANSFER_IN_FAILED");
+        TH.safeTransferFrom(baseContract, msg.sender, address(this), amount);
     }
 
     /**
      * @dev Exchange Nebula tokens back to USDC, receive yield.
      * @param amount to be exchanged in Nebula yield token (18 decimals)
      */
-    function exchange(uint256 amount) external {
+    function exchange(uint256 amount) external nonReentrant {
         uint256 userBal = balanceOf(msg.sender);
         require(userBal > 0, "ERR_INSUFFICIENT_BALANCE");
         if (userBal <= amount) amount = userBal;
@@ -224,7 +226,7 @@ contract NebulaV2 is
         _burn(msg.sender, amount);
 
         emit Exchange(msg.sender, amount, value);
-        require(baseContract.transfer(msg.sender, value), "ERR_TRANSFER_OUT_FAILED");
+        TH.safeTransfer(baseContract, msg.sender, value);
     }
 
     /**
@@ -232,7 +234,7 @@ contract NebulaV2 is
      * @param amount to be borrowed
      * Emits a {Borrow} event.
      */
-    function borrow(uint256 amount) external whenNotPaused {
+    function borrow(uint256 amount) external nonReentrant whenNotPaused {
         require(totalBorrow + amount <= totalBase, "ERR_NO_LIQUIDITY");
         uint256 rateRay = annualRateToRay(getBorrowRate());
         uint256 balance;
@@ -251,7 +253,7 @@ contract NebulaV2 is
         loans[msg.sender] = amount + balance;
 
         emit Borrow(msg.sender, amount);
-        require(baseContract.transfer(msg.sender, amount), "ERR_TRANSFER_OUT_FAILED");
+        TH.safeTransfer(baseContract, msg.sender, amount);
     }
 
     /**
@@ -259,7 +261,7 @@ contract NebulaV2 is
      * @param amount to be repayed
      * Emits a {Repay} event.
      */
-    function repay(uint256 amount) external whenNotPaused {
+    function repay(uint256 amount) external nonReentrant whenNotPaused {
         require(loans[msg.sender] > 0, "ERR_NO_EXISTING_LOAN");
         uint256 balance = getAccruedDebt(msg.sender);
 
@@ -284,7 +286,7 @@ contract NebulaV2 is
      * @param amount to be supplied
      * Emits a {SupplyCollateral} event.
      */
-    function supplyCollateral(address asset, uint256 amount) external whenNotPaused {
+    function supplyCollateral(address asset, uint256 amount) external nonReentrant whenNotPaused {
         require(listedAsset.contains(asset), "ERR_UNSUPPORTED_ASSET");
         Asset memory token = assetInfo[asset];
         require(token.active == 1, "ERR_DISABLED_ASSET");
@@ -312,7 +314,7 @@ contract NebulaV2 is
      * @param amount to be withdrawn
      * Emits a {WithdrawCollateral} event.
      */
-    function withdrawCollateral(address asset, uint256 amount) external whenNotPaused {
+    function withdrawCollateral(address asset, uint256 amount) external nonReentrant whenNotPaused {
         require(collateral[msg.sender][asset] >= amount, "ERR_INSUFFICIENT_BALANCE");
 
         collateral[msg.sender][asset] -= amount;
@@ -338,7 +340,7 @@ contract NebulaV2 is
      *
      * Emits a {WithdrawCollateral} event.
      */
-    function exitAll() external whenNotPaused {
+    function exitAll() external nonReentrant whenNotPaused {
         if (loans[msg.sender] > 0) repayMax();
         address[] memory assets = userCollateralAssets[msg.sender];
         uint256 len = assets.length;
@@ -360,7 +362,7 @@ contract NebulaV2 is
      * @param src borrower address
      * Emits a {Liquidated} event.
      */
-    function liquidate(address src) external whenNotPaused {
+    function liquidate(address src) external nonReentrant whenNotPaused {
         require(tokenContract.balanceOf(msg.sender) >= liquidatorThreshold, "ERR_NOT_LIQUIDATOR");
         require(isLiquidatable(src), "ERR_NOT_LIQUIDATABLE");
         uint256 balance = getAccruedDebt(src);
@@ -635,7 +637,7 @@ contract NebulaV2 is
      *
      * Emits a {Repay} event.
      */
-    function repayMax() public whenNotPaused {
+    function repayMax() public nonReentrant whenNotPaused {
         require(loans[msg.sender] > 0, "ERR_NO_EXISTING_LOAN");
         uint256 balance = getAccruedDebt(msg.sender);
         totalBorrow = totalBorrow - loans[msg.sender];
@@ -740,8 +742,13 @@ contract NebulaV2 is
      * @return asset price
      */
     function getAssetPrice(address oracle) public view returns (uint256) {
-        (, int256 answer,,,) = AggregatorV3Interface(oracle).latestRoundData();
-        return uint256(answer);
+        (uint80 roundId, int256 price,, uint256 updatedAt, uint80 answeredInRound) =
+            AggregatorV3Interface(oracle).latestRoundData();
+
+        require(answeredInRound >= roundId, "ERR_STALE_PRICE");
+        require(updatedAt > block.timestamp - 60 * 60, "ERR_STALE_PRICE");
+
+        return uint256(price);
     }
 
     /**
@@ -802,7 +809,7 @@ contract NebulaV2 is
      */
     function repayInternal(uint256 amount) internal {
         emit Repay(msg.sender, amount);
-        require(baseContract.transferFrom(msg.sender, address(this), amount), "ERR_TRANSFER_IN_FAILED");
+        TH.safeTransferFrom(baseContract, msg.sender, address(this), amount);
     }
 
     /**

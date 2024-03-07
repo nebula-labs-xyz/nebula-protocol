@@ -9,14 +9,23 @@ pragma solidity ^0.8.23;
 
 import {IYODA} from "../interfaces/IYODA.sol";
 import {IECOSYSTEM} from "../interfaces/IEcosystem.sol";
+import {IERC20, SafeERC20 as TH} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {VestingWallet} from "@openzeppelin/contracts/finance/VestingWallet.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 /// @custom:oz-upgrades-from contracts/ecosystem/Ecosystem.sol:Ecosystem
-contract EcosystemV2 is IECOSYSTEM, Initializable, PausableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
+contract EcosystemV2 is
+    IECOSYSTEM,
+    Initializable,
+    PausableUpgradeable,
+    AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
+{
     /// @dev AccessControl Burner Role
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     /// @dev AccessControl Pauser Role
@@ -107,19 +116,25 @@ contract EcosystemV2 is IECOSYSTEM, Initializable, PausableUpgradeable, AccessCo
      * @param winners address array
      * @param amount token amount per winner
      */
-    function airdrop(address[] calldata winners, uint256 amount) external whenNotPaused onlyRole(MANAGER_ROLE) {
+    function airdrop(address[] calldata winners, uint256 amount)
+        external
+        nonReentrant
+        whenNotPaused
+        onlyRole(MANAGER_ROLE)
+    {
         if (amount < 1 ether) revert CustomError("INVALID_AMOUNT");
         uint256 len = winners.length;
-        if (len > 5000) revert CustomError("GAS_LIMIT");
+
         if (issuedAirDrop + len * amount > airdropSupply) {
             revert CustomError("AIRDROP_SUPPLY_LIMIT");
         }
 
         issuedAirDrop += len * amount;
         emit AirDrop(winners, amount);
+
+        if (len > 5000) revert CustomError("GAS_LIMIT");
         for (uint256 i = 0; i < len; ++i) {
-            bool success = ecosystemToken.transfer(winners[i], amount);
-            if (!success) revert CustomError("AIRDROP_TRANSFER_FAILED");
+            TH.safeTransfer(ecosystemToken, winners[i], amount);
         }
     }
 
@@ -128,7 +143,7 @@ contract EcosystemV2 is IECOSYSTEM, Initializable, PausableUpgradeable, AccessCo
      * @param to beneficiary address
      * @param amount token amount
      */
-    function reward(address to, uint256 amount) external whenNotPaused onlyRole(REWARDER_ROLE) {
+    function reward(address to, uint256 amount) external nonReentrant whenNotPaused onlyRole(REWARDER_ROLE) {
         if (amount == 0) revert CustomError("INVALID_AMOUNT");
         if (amount > maxReward) revert CustomError("REWARD_LIMIT");
         if (issuedReward + amount > rewardSupply) {
@@ -137,15 +152,14 @@ contract EcosystemV2 is IECOSYSTEM, Initializable, PausableUpgradeable, AccessCo
 
         issuedReward += amount;
         emit Reward(to, amount);
-        bool success = ecosystemToken.transfer(to, amount);
-        if (!success) revert CustomError("REWARD_TRANSFER_FAILED");
+        TH.safeTransfer(ecosystemToken, to, amount);
     }
 
     /**
      * @dev Enables Burn functionality for the DAO.
      * @param amount token amount
      */
-    function burn(uint256 amount) external whenNotPaused onlyRole(BURNER_ROLE) {
+    function burn(uint256 amount) external nonReentrant whenNotPaused onlyRole(BURNER_ROLE) {
         if (amount == 0) revert CustomError("INVALID_AMOUNT");
         if (issuedReward + amount > rewardSupply) {
             revert CustomError("BURN_SUPPLY_LIMIT");
@@ -162,7 +176,7 @@ contract EcosystemV2 is IECOSYSTEM, Initializable, PausableUpgradeable, AccessCo
      * @param partner beneficiary address
      * @param amount token amount
      */
-    function addPartner(address partner, uint256 amount) external whenNotPaused onlyRole(MANAGER_ROLE) {
+    function addPartner(address partner, uint256 amount) external nonReentrant whenNotPaused onlyRole(MANAGER_ROLE) {
         if (partner == address(0)) revert CustomError("INVALID_ADDRESS");
         if (vestingContracts[partner] != address(0)) {
             revert CustomError("PARTNER_EXISTS");
@@ -181,8 +195,7 @@ contract EcosystemV2 is IECOSYSTEM, Initializable, PausableUpgradeable, AccessCo
         vestingContracts[partner] = address(vestingContract);
 
         emit AddPartner(partner, address(vestingContract), amount);
-        bool success = ecosystemToken.transfer(address(vestingContract), amount);
-        if (!success) revert CustomError("ALLOCATION_TRANSFER_FAILED");
+        TH.safeTransfer(ecosystemToken, address(vestingContract), amount);
     }
 
     /**
@@ -194,11 +207,12 @@ contract EcosystemV2 is IECOSYSTEM, Initializable, PausableUpgradeable, AccessCo
     function verifyAirdrop(address[] calldata winners, uint256 amount) external view returns (bool) {
         if (amount < 1 ether) revert CustomError("INVALID_AMOUNT");
         uint256 len = winners.length;
-        if (len > 5000) revert CustomError("GAS_LIMIT");
+
         if (issuedAirDrop + len * amount > airdropSupply) {
             revert CustomError("AIRDROP_SUPPLY_LIMIT");
         }
 
+        if (len > 5000) revert CustomError("GAS_LIMIT");
         for (uint256 i = 0; i < len; ++i) {
             if (winners[i] == address(0)) return false;
             if (winners[i].balance < 0.2e18) return false;

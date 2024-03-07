@@ -47,5 +47,5 @@ interface ITEAMMANAGER {
     /**
      * @dev Create new vesting contract for a team member.
      */
-    function addTeamMember(address beneficiary, uint256 amount) external returns (bool);
+    function addTeamMember(address beneficiary, uint256 amount) external;
 }

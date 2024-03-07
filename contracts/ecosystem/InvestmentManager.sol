@@ -11,11 +11,13 @@ import {IYODA} from "../interfaces/IYODA.sol";
 import {IWETH9} from "../interfaces/IWETH9.sol";
 import {IINVESTOR} from "../interfaces/IInvestmentManager.sol";
 import {InvestorVesting} from "./InvestorVesting.sol";
-import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IERC20, SafeERC20 as TH} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 /// @custom:oz-upgrades
 contract InvestmentManager is
@@ -23,6 +25,7 @@ contract InvestmentManager is
     Initializable,
     PausableUpgradeable,
     AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
     /// @dev AccessControl Pauser Role
@@ -140,15 +143,14 @@ contract InvestmentManager is
     function investWETH(uint8 round_, uint256 amount) external whenNotPaused {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         invest(round_, amount);
-        SafeERC20.safeTransferFrom(IERC20(address(wethContract)), msg.sender, address(this), amount);
+        TH.safeTransferFrom(IERC20(address(wethContract)), msg.sender, address(this), amount);
     }
 
     /**
      * @dev Allows investor to get a rufund from an open round.
      * @param round_ round number in question
-     * @return success boolean
      */
-    function cancelInvestment(uint8 round_) external returns (bool success) {
+    function cancelInvestment(uint8 round_) external nonReentrant {
         if (round_ > rounds.length) revert CustomError("INVALID_ROUND");
         Round storage current = rounds[round_];
         if (current.etherInvested == current.etherTarget) {
@@ -168,16 +170,14 @@ contract InvestmentManager is
         totalAllocation -= item.tokenAmount;
         current.etherInvested -= item.etherAmount;
         current.participants--;
-
-        success = wethContract.transfer(msg.sender, item.etherAmount);
-        if (!success) revert CustomError("CANCEL_INVESTMENT_FAILED");
+        TH.safeTransfer(IERC20(address(wethContract)), msg.sender, item.etherAmount);
     }
 
     /**
      * @dev Closes an investment round after the round target has been reached.
      * @param round_ round number in question
      */
-    function closeRound(uint8 round_) external {
+    function closeRound(uint8 round_) external nonReentrant {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         Round memory current = rounds[round_];
 
@@ -198,7 +198,7 @@ contract InvestmentManager is
      * @dev Allows manager to cancel a round if need be, and issues refunds (WETH) to investors.
      * @param round_ round number in question
      */
-    function cancelRound(uint8 round_) external onlyRole(MANAGER_ROLE) {
+    function cancelRound(uint8 round_) external nonReentrant onlyRole(MANAGER_ROLE) {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         Round memory current = rounds[round_];
         if (current.etherInvested == current.etherTarget) {
@@ -219,9 +219,7 @@ contract InvestmentManager is
             Investment memory item = investorAllocations[round_][investors[i]];
             totalAllocation -= item.tokenAmount;
             investorAllocations[round_][investors[i]] = Investment(0, 0);
-
-            bool success = wethContract.transfer(investors[i], item.etherAmount);
-            if (!success) revert CustomError("WETH_TRANSFER_FAILED");
+            TH.safeTransfer(IERC20(address(wethContract)), investors[i], item.etherAmount);
         }
     }
 
@@ -259,8 +257,7 @@ contract InvestmentManager is
     function investEther(uint8 round_) public payable whenNotPaused {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         invest(round_, msg.value);
-        (bool success,) = payable(address(wethContract)).call{value: msg.value}("");
-        require(success, "TRANSFER_FAILED");
+        Address.sendValue(payable(address(wethContract)), msg.value);
     }
 
     /**
@@ -315,8 +312,9 @@ contract InvestmentManager is
                 uint64(730 days) // duration after cliff
             );
             vestingContracts[round][investors[i]] = address(vestingContract);
-            bool success = ecosystemToken.transfer(address(vestingContract), alloc);
-            if (!success) revert CustomError("ALLOCATION_TRANSFER_FAILED");
+            TH.safeTransfer(ecosystemToken, address(vestingContract), alloc);
+            // bool success = ecosystemToken.transfer(address(vestingContract), alloc);
+            // if (!success) revert CustomError("ALLOCATION_TRANSFER_FAILED");
         }
     }
 
@@ -325,7 +323,7 @@ contract InvestmentManager is
      * @param amount amount of tokens to send back to treasury
      */
     function withdrawTokens(uint256 amount) internal {
-        require(ecosystemToken.transfer(treasury, amount), "ALLOCATION_TRANSFER_FAILED");
+        TH.safeTransfer(ecosystemToken, treasury, amount);
     }
 
     /// @inheritdoc UUPSUpgradeable

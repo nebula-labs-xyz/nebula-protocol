@@ -41,7 +41,7 @@ interface IINVESTOR {
 
     function investWETH(uint8 round, uint256 amount) external;
 
-    function cancelInvestment(uint8 round) external returns (bool);
+    function cancelInvestment(uint8 round) external;
 
     function closeRound(uint8 round) external;
 

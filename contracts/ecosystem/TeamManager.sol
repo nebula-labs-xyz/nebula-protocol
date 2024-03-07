@@ -9,14 +9,23 @@ pragma solidity ^0.8.23;
 
 import {IYODA} from "../interfaces/IYODA.sol";
 import {ITEAMMANAGER} from "../interfaces/ITeamManager.sol";
+import {IERC20, SafeERC20 as TH} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {TeamVesting} from "./TeamVesting.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 /// @custom:oz-upgrades
-contract TeamManager is ITEAMMANAGER, Initializable, PausableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
+contract TeamManager is
+    ITEAMMANAGER,
+    Initializable,
+    PausableUpgradeable,
+    AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
+{
     /// @dev AccessControl Pauser Role
     bytes32 internal constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     /// @dev AccessControl Manager Role
@@ -90,13 +99,12 @@ contract TeamManager is ITEAMMANAGER, Initializable, PausableUpgradeable, Access
      * @dev Create and fund a vesting contract for a new team member
      * @param beneficiary beneficiary address
      * @param amount token amount
-     * @return success boolean
      */
     function addTeamMember(address beneficiary, uint256 amount)
         external
+        nonReentrant
         whenNotPaused
         onlyRole(MANAGER_ROLE)
-        returns (bool success)
     {
         if (totalAllocation + amount > supply) {
             revert CustomError("SUPPLY_LIMIT");
@@ -115,8 +123,7 @@ contract TeamManager is ITEAMMANAGER, Initializable, PausableUpgradeable, Access
         vestingContracts[beneficiary] = address(vestingContract);
 
         emit AddTeamMember(beneficiary, address(vestingContract), amount);
-        success = ecosystemToken.transfer(address(vestingContract), amount);
-        if (!success) revert CustomError("ALLOCATION_TRANSFER_FAILED");
+        TH.safeTransfer(ecosystemToken, address(vestingContract), amount);
     }
 
     /// @inheritdoc UUPSUpgradeable

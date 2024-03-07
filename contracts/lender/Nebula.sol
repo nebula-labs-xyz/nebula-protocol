@@ -25,10 +25,11 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import {ERC20PausableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PausableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {AggregatorV3Interface} from "../vendor/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {ERC20PausableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PausableUpgradeable.sol";
 
 /// @custom:oz-upgrades
 contract Nebula is
@@ -37,6 +38,7 @@ contract Nebula is
     ERC20Upgradeable,
     ERC20PausableUpgradeable,
     AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable,
     UUPSUpgradeable,
     YodaMath
 {
@@ -173,7 +175,7 @@ contract Nebula is
      * @dev Supply USDC liquidity to protocol, and receive Nebula tokens.
      * @param amount to be supplied in USDC (6 decimals)
      */
-    function supplyLiquidity(uint256 amount) external {
+    function supplyLiquidity(uint256 amount) external nonReentrant {
         require(baseContract.balanceOf(msg.sender) >= amount, "ERR_INSUFFICIENT_BALANCE");
         uint256 total = baseContract.balanceOf(address(this)) + totalBorrow;
         if (total == 0) total = WAD;
@@ -195,7 +197,7 @@ contract Nebula is
      * @dev Exchange Nebula tokens back to USDC, receive yield.
      * @param amount to be exchanged in Nebula yield token (18 decimals)
      */
-    function exchange(uint256 amount) external {
+    function exchange(uint256 amount) external nonReentrant {
         uint256 userBal = balanceOf(msg.sender);
         require(userBal > 0, "ERR_INSUFFICIENT_BALANCE");
         if (userBal <= amount) amount = userBal;
@@ -232,7 +234,7 @@ contract Nebula is
      * @param amount to be borrowed
      * Emits a {Borrow} event.
      */
-    function borrow(uint256 amount) external whenNotPaused {
+    function borrow(uint256 amount) external nonReentrant whenNotPaused {
         require(totalBorrow + amount <= totalBase, "ERR_NO_LIQUIDITY");
         uint256 rateRay = annualRateToRay(getBorrowRate());
         uint256 balance;
@@ -259,7 +261,7 @@ contract Nebula is
      * @param amount to be repayed
      * Emits a {Repay} event.
      */
-    function repay(uint256 amount) external whenNotPaused {
+    function repay(uint256 amount) external nonReentrant whenNotPaused {
         require(loans[msg.sender] > 0, "ERR_NO_EXISTING_LOAN");
         uint256 balance = getAccruedDebt(msg.sender);
 
@@ -284,7 +286,7 @@ contract Nebula is
      * @param amount to be supplied
      * Emits a {SupplyCollateral} event.
      */
-    function supplyCollateral(address asset, uint256 amount) external whenNotPaused {
+    function supplyCollateral(address asset, uint256 amount) external nonReentrant whenNotPaused {
         require(listedAsset.contains(asset), "ERR_UNSUPPORTED_ASSET");
         Asset memory token = assetInfo[asset];
         require(token.active == 1, "ERR_DISABLED_ASSET");
@@ -312,7 +314,7 @@ contract Nebula is
      * @param amount to be withdrawn
      * Emits a {WithdrawCollateral} event.
      */
-    function withdrawCollateral(address asset, uint256 amount) external whenNotPaused {
+    function withdrawCollateral(address asset, uint256 amount) external nonReentrant whenNotPaused {
         require(collateral[msg.sender][asset] >= amount, "ERR_INSUFFICIENT_BALANCE");
 
         collateral[msg.sender][asset] -= amount;
@@ -338,7 +340,7 @@ contract Nebula is
      *
      * Emits a {WithdrawCollateral} event.
      */
-    function exitAll() external whenNotPaused {
+    function exitAll() external nonReentrant whenNotPaused {
         if (loans[msg.sender] > 0) repayMax();
         address[] memory assets = userCollateralAssets[msg.sender];
         uint256 len = assets.length;
@@ -360,7 +362,7 @@ contract Nebula is
      * @param src borrower address
      * Emits a {Liquidated} event.
      */
-    function liquidate(address src) external whenNotPaused {
+    function liquidate(address src) external nonReentrant whenNotPaused {
         require(tokenContract.balanceOf(msg.sender) >= liquidatorThreshold, "ERR_NOT_LIQUIDATOR");
         require(isLiquidatable(src), "ERR_NOT_LIQUIDATABLE");
         uint256 balance = getAccruedDebt(src);
@@ -635,7 +637,7 @@ contract Nebula is
      *
      * Emits a {Repay} event.
      */
-    function repayMax() public whenNotPaused {
+    function repayMax() public nonReentrant whenNotPaused {
         require(loans[msg.sender] > 0, "ERR_NO_EXISTING_LOAN");
         uint256 balance = getAccruedDebt(msg.sender);
         totalBorrow = totalBorrow - loans[msg.sender];

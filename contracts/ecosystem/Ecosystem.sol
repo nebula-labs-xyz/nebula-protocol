@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 /**
  * @title Yoda Ecosystem Contract
  * @notice Ecosystem contract handles airdrops, rewards, burning, and partnerships
@@ -16,29 +16,39 @@ import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Pau
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 /// @custom:oz-upgrades
-contract Ecosystem is
-    IECOSYSTEM,
-    Initializable,
-    PausableUpgradeable,
-    AccessControlUpgradeable,
-    UUPSUpgradeable
-{
-    bytes32 private constant BURNER_ROLE = keccak256("BURNER_ROLE");
-    bytes32 private constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    bytes32 private constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
-    bytes32 private constant REWARDER_ROLE = keccak256("REWARDER_ROLE");
-    bytes32 private constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+contract Ecosystem is IECOSYSTEM, Initializable, PausableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
+    /// @dev AccessControl Burner Role
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+    /// @dev AccessControl Pauser Role
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    /// @dev AccessControl Upgrader Role
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    /// @dev AccessControl Rewarder Role
+    bytes32 public constant REWARDER_ROLE = keccak256("REWARDER_ROLE");
+    /// @dev AccessControl Manager Role
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
-    IYODA private ecosystemToken;
+    /// @dev governance token instance
+    IYODA public ecosystemToken;
+    /// @dev starting reward supply
     uint256 public rewardSupply;
+    /// @dev maximal one time reward amount
     uint256 public maxReward;
-    uint256 public totalReward;
+    /// @dev issued reward
+    uint256 public issuedReward;
+    /// @dev maximum one time burn amount
     uint256 public maxBurn;
+    /// @dev starting airdrop supply
     uint256 public airdropSupply;
-    uint256 public totalAirDrop;
+    /// @dev total amount airdropped so far
+    uint256 public issuedAirDrop;
+    /// @dev starting partnership supply
     uint256 public partnershipSupply;
-    uint256 public totalPartnership;
+    /// @dev partnership tokens issued so far
+    uint256 public issuedPartnership;
+    /// @dev number of UUPS upgrades
     uint8 public version;
+    /// @dev Addresses of vesting contracts issued to partners
     mapping(address => address) public vestingContracts;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -46,11 +56,21 @@ contract Ecosystem is
         _disableInitializers();
     }
 
-    function initialize(
-        address token,
-        address defaultAdmin,
-        address pauser
-    ) public initializer {
+    /**
+     * @notice solidity receive function
+     * @dev reverts on receive ETH
+     */
+    receive() external payable {
+        if (msg.value > 0) revert CustomError("NO_RECEIVE");
+    }
+
+    /**
+     * @dev Initializes the ecosystem contract
+     * @param token token address
+     * @param defaultAdmin admin address
+     * @param pauser pauser address
+     */
+    function initialize(address token, address defaultAdmin, address pauser) external initializer {
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
@@ -66,17 +86,6 @@ contract Ecosystem is
         maxReward = rewardSupply / 1000;
         maxBurn = rewardSupply / 50;
         ++version;
-    }
-
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyRole(UPGRADER_ROLE) {
-        ++version;
-        emit Upgrade(msg.sender, newImplementation);
-    }
-
-    receive() external payable {
-        if (msg.value > 0) revert CustomError("NO_RECEIVE");
     }
 
     /**
@@ -95,18 +104,18 @@ contract Ecosystem is
 
     /**
      * @dev Performs Airdrop.
+     * @param winners address array
+     * @param amount token amount per winner
      */
-    function airdrop(
-        address[] calldata winners,
-        uint256 amount
-    ) external whenNotPaused onlyRole(MANAGER_ROLE) {
+    function airdrop(address[] calldata winners, uint256 amount) external whenNotPaused onlyRole(MANAGER_ROLE) {
         if (amount < 1 ether) revert CustomError("INVALID_AMOUNT");
         uint256 len = winners.length;
         if (len > 5000) revert CustomError("GAS_LIMIT");
-        if (totalAirDrop + len * amount > airdropSupply)
+        if (issuedAirDrop + len * amount > airdropSupply) {
             revert CustomError("AIRDROP_SUPPLY_LIMIT");
+        }
 
-        totalAirDrop += len * amount;
+        issuedAirDrop += len * amount;
         emit AirDrop(winners, amount);
         for (uint256 i = 0; i < len; ++i) {
             bool success = ecosystemToken.transfer(winners[i], amount);
@@ -115,38 +124,18 @@ contract Ecosystem is
     }
 
     /**
-     * @dev Performs Airdrop verification.
-     */
-    function verifyAirdrop(
-        address[] calldata winners,
-        uint256 amount
-    ) public view returns (bool) {
-        if (amount < 1 ether) revert CustomError("INVALID_AMOUNT");
-        uint256 len = winners.length;
-        if (len > 5000) revert CustomError("GAS_LIMIT");
-        if (totalAirDrop + len * amount > airdropSupply)
-            revert CustomError("AIRDROP_SUPPLY_LIMIT");
-
-        for (uint256 i = 0; i < len; ++i) {
-            if (winners[i] == address(0)) return false;
-            if (winners[i].balance < 0.2e18) return false;
-        }
-        return true;
-    }
-
-    /**
      * @dev Reward functionality for the Nebula Protocol.
+     * @param to beneficiary address
+     * @param amount token amount
      */
-    function reward(
-        address to,
-        uint256 amount
-    ) external whenNotPaused onlyRole(REWARDER_ROLE) {
+    function reward(address to, uint256 amount) external whenNotPaused onlyRole(REWARDER_ROLE) {
         if (amount == 0) revert CustomError("INVALID_AMOUNT");
         if (amount > maxReward) revert CustomError("REWARD_LIMIT");
-        if (totalReward + amount > rewardSupply)
+        if (issuedReward + amount > rewardSupply) {
             revert CustomError("REWARD_SUPPLY_LIMIT");
+        }
 
-        totalReward += amount;
+        issuedReward += amount;
         emit Reward(to, amount);
         bool success = ecosystemToken.transfer(to, amount);
         if (!success) revert CustomError("REWARD_TRANSFER_FAILED");
@@ -154,11 +143,13 @@ contract Ecosystem is
 
     /**
      * @dev Enables Burn functionality for the DAO.
+     * @param amount token amount
      */
     function burn(uint256 amount) external whenNotPaused onlyRole(BURNER_ROLE) {
         if (amount == 0) revert CustomError("INVALID_AMOUNT");
-        if (totalReward + amount > rewardSupply)
+        if (issuedReward + amount > rewardSupply) {
             revert CustomError("BURN_SUPPLY_LIMIT");
+        }
 
         if (amount > maxBurn) revert CustomError("MAX_BURN_LIMIT");
         rewardSupply -= amount;
@@ -168,34 +159,56 @@ contract Ecosystem is
 
     /**
      * @dev Creates and funds new vesting contract for a new partner.
+     * @param partner beneficiary address
+     * @param amount token amount
      */
-    function addPartner(
-        address partner,
-        uint256 amount
-    ) external whenNotPaused onlyRole(MANAGER_ROLE) {
+    function addPartner(address partner, uint256 amount) external whenNotPaused onlyRole(MANAGER_ROLE) {
         if (partner == address(0)) revert CustomError("INVALID_ADDRESS");
-        if (vestingContracts[partner] != address(0))
+        if (vestingContracts[partner] != address(0)) {
             revert CustomError("PARTNER_EXISTS");
-        if (amount > partnershipSupply / 2 || amount < 100 ether)
+        }
+        if (amount > partnershipSupply / 2 || amount < 100 ether) {
             revert CustomError("INVALID_AMOUNT");
-        if (totalPartnership + amount > partnershipSupply)
+        }
+        if (issuedPartnership + amount > partnershipSupply) {
             revert CustomError("AMOUNT_EXCEEDS_SUPPLY");
+        }
 
-        totalPartnership += amount;
+        issuedPartnership += amount;
 
-        VestingWallet vestingContract = new VestingWallet(
-            partner,
-            uint64(block.timestamp + 365 days),
-            uint64(730 days)
-        );
+        VestingWallet vestingContract = new VestingWallet(partner, uint64(block.timestamp + 365 days), uint64(730 days));
 
         vestingContracts[partner] = address(vestingContract);
 
         emit AddPartner(partner, address(vestingContract), amount);
-        bool success = ecosystemToken.transfer(
-            address(vestingContract),
-            amount
-        );
+        bool success = ecosystemToken.transfer(address(vestingContract), amount);
         if (!success) revert CustomError("ALLOCATION_TRANSFER_FAILED");
+    }
+
+    /**
+     * @dev Performs Airdrop verification.
+     * @param winners address array
+     * @param amount token amount per winner
+     * @return success boolean
+     */
+    function verifyAirdrop(address[] calldata winners, uint256 amount) external view returns (bool) {
+        if (amount < 1 ether) revert CustomError("INVALID_AMOUNT");
+        uint256 len = winners.length;
+        if (len > 5000) revert CustomError("GAS_LIMIT");
+        if (issuedAirDrop + len * amount > airdropSupply) {
+            revert CustomError("AIRDROP_SUPPLY_LIMIT");
+        }
+
+        for (uint256 i = 0; i < len; ++i) {
+            if (winners[i] == address(0)) return false;
+            if (winners[i].balance < 0.2e18) return false;
+        }
+        return true;
+    }
+
+    /// @inheritdoc UUPSUpgradeable
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {
+        ++version;
+        emit Upgrade(msg.sender, newImplementation);
     }
 }

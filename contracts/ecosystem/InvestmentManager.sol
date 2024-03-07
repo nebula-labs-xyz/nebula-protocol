@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 /**
  * @title Yoda Ecosystem Investment manager
  * @notice Handles investment rounds and vesting contracts
  * @author Nebula Labs Inc
  * @custom:security-contact security@nebula-labs.xyz
  */
+
 import {IYODA} from "../interfaces/IYODA.sol";
 import {IWETH9} from "../interfaces/IWETH9.sol";
 import {IINVESTOR} from "../interfaces/IInvestmentManager.sol";
@@ -23,25 +24,39 @@ contract InvestmentManager is
     AccessControlUpgradeable,
     UUPSUpgradeable
 {
-    bytes32 private constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    bytes32 private constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    bytes32 private constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    /// @dev AccessControl Pauser Role
+    bytes32 internal constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    /// @dev AccessControl Manager Role
+    bytes32 internal constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    /// @dev AccessControl Upgrader Role
+    bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
-    IYODA private ecosystemToken;
-    IWETH9 private wethContract;
+    /// @dev governance token instance
+    IYODA internal ecosystemToken;
+    /// @dev WETH token instance
+    IWETH9 internal wethContract;
+    /// @dev timelock address
     address public timelock;
+    /// @dev treasury address
     address public treasury;
-
+    /// @dev amount of ecosystem tokens in the contract
     uint256 public supply;
+    /// @dev amount of tokens allocated to vesting
     uint256 public totalAllocation;
-
+    /// @dev number of UUPS upgrades
     uint8 public version;
+    /// @dev number of the current round
     uint8 public round;
+    /// @dev Round object array
     Round[] public rounds;
-
-    mapping(uint8 => address[]) private investors_;
-    mapping(uint8 => mapping(address => uint256)) private ipos;
+    /// @dev Investor to round mapping
+    mapping(uint8 => address[]) internal investors_;
+    /// @dev tracks investor position in the investors_ array mapping above
+    /// @dev in order to be able to cancel investments without looping, just like EnumarableSet contract
+    mapping(uint8 => mapping(address => uint256)) internal ipos;
+    /// @dev Vesting contract addresses for investors per round
     mapping(uint8 => mapping(address => address)) public vestingContracts;
+    /// @dev Tracks investor allocations per round
     mapping(uint8 => mapping(address => Investment)) public investorAllocations;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -49,13 +64,24 @@ contract InvestmentManager is
         _disableInitializers();
     }
 
-    function initialize(
-        address token,
-        address timelock_,
-        address treasury_,
-        address weth_,
-        address guardian
-    ) external initializer {
+    /// @notice solidity receive function
+    /// @dev triggers the investEther function on receive
+    receive() external payable {
+        if (msg.sender != address(wethContract)) investEther(round);
+    }
+
+    /**
+     * @dev Initializes the this contract
+     * @param token ecosystem token address
+     * @param timelock_ timelock address
+     * @param treasury_ treasury address
+     * @param weth_ WETH address
+     * @param guardian guardian address
+     */
+    function initialize(address token, address timelock_, address treasury_, address weth_, address guardian)
+        external
+        initializer
+    {
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
@@ -70,10 +96,6 @@ contract InvestmentManager is
         timelock = timelock_;
         treasury = treasury_;
         version++;
-    }
-
-    receive() external payable {
-        if (msg.sender != address(wethContract)) investEther(round);
     }
 
     /**
@@ -91,65 +113,31 @@ contract InvestmentManager is
     }
 
     /**
-     * @dev Getter ruturns the curretly active round.
-     */
-    function getCurrentRound() external view returns (uint8) {
-        return round;
-    }
-
-    /**
-     * @dev Getter ruturns the curretly active round details: Round object.
-     */
-    function getRoundInfo(
-        uint8 round_
-    ) external view returns (IINVESTOR.Round memory) {
-        return rounds[round_];
-    }
-
-    /**
-     * @dev Getter ruturns the curretly active round min invest amount.
-     */
-    function getMinInvestAmount(uint8 round_) external view returns (uint256) {
-        IINVESTOR.Round memory item = rounds[round_];
-        return item.etherTarget / 50;
-    }
-
-    /**
      * @dev Creates an investment round.
+     * @param start round start timestamp
+     * @param duration seconds
+     * @param ethTarget round target amount in ETH
+     * @param tokenAlloc number of ecosystem tokens allocated to the round
      */
-    function createRound(
-        uint64 start,
-        uint64 duration,
-        uint256 etherTarget,
-        uint256 tokenAlloc
-    ) external onlyRole(MANAGER_ROLE) {
+    function createRound(uint64 start, uint64 duration, uint256 ethTarget, uint256 tokenAlloc)
+        external
+        onlyRole(MANAGER_ROLE)
+    {
         supply += tokenAlloc;
         uint256 balance = ecosystemToken.balanceOf(address(this));
         if (balance < supply) revert CustomError("NO_SUPPLY");
         uint64 end = start + duration;
-        Round memory item = Round(etherTarget, 0, tokenAlloc, 0, start, end, 1);
+        Round memory item = Round(ethTarget, 0, tokenAlloc, 0, start, end, 1);
         rounds.push(item);
     }
 
     /**
-     * @dev Processes ETH investment into a round.
-     */
-    function investEther(uint8 round_) public payable whenNotPaused {
-        if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
-        invest(round_, msg.value);
-        (bool success, ) = payable(address(wethContract)).call{
-            value: msg.value
-        }("");
-        require(success, "TRANSFER_FAILED");
-    }
-
-    /**
      * @dev Processes WETH investment into a round.
+     * @param round_ round number in question
+     * @param amount amount of ETH to invest
+     * @return success boolean
      */
-    function investWETH(
-        uint8 round_,
-        uint256 amount
-    ) external whenNotPaused returns (bool success) {
+    function investWETH(uint8 round_, uint256 amount) external whenNotPaused returns (bool success) {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         invest(round_, amount);
         success = wethContract.transferFrom(msg.sender, address(this), amount);
@@ -158,19 +146,20 @@ contract InvestmentManager is
 
     /**
      * @dev Allows investor to get a rufund from an open round.
+     * @param round_ round number in question
+     * @return success boolean
      */
     function cancelInvestment(uint8 round_) external returns (bool success) {
         if (round_ > rounds.length) revert CustomError("INVALID_ROUND");
         Round storage current = rounds[round_];
-        if (current.etherInvested == current.etherTarget)
+        if (current.etherInvested == current.etherTarget) {
             revert CustomError("ROUND_CLOSED");
+        }
 
         uint256 pos = ipos[round_][msg.sender];
         if (pos == 0) revert CustomError("INVESTOR_NOT_EXIST");
 
-        investors_[round_][pos - 1] = investors_[round_][
-            investors_[round_].length - 1
-        ];
+        investors_[round_][pos - 1] = investors_[round_][investors_[round_].length - 1];
         investors_[round_].pop();
         delete ipos[round_][msg.sender];
 
@@ -187,36 +176,41 @@ contract InvestmentManager is
 
     /**
      * @dev Closes an investment round after the round target has been reached.
+     * @param round_ round number in question
      */
     function closeRound(uint8 round_) external {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         Round memory current = rounds[round_];
 
-        if (current.etherInvested < current.etherTarget)
+        if (current.etherInvested < current.etherTarget) {
             revert CustomError("ROUND_STILL_OPEN");
+        }
 
         deployVestingContracts(round_);
         round++;
 
         wethContract.withdraw(current.etherInvested);
 
-        (bool success, ) = treasury.call{value: current.etherInvested}("");
+        (bool success,) = treasury.call{value: current.etherInvested}("");
         if (!success) revert CustomError("WITHDRAWAL_FAILED");
     }
 
     /**
      * @dev Allows manager to cancel a round if need be, and issues refunds (WETH) to investors.
+     * @param round_ round number in question
      */
     function cancelRound(uint8 round_) external onlyRole(MANAGER_ROLE) {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         Round memory current = rounds[round_];
-        if (current.etherInvested == current.etherTarget)
+        if (current.etherInvested == current.etherTarget) {
             revert CustomError("ROUND_CLOSED");
+        }
 
         address[] memory investors = investors_[round_];
         uint64 len = uint64(investors.length);
-        if (round_ != rounds.length - 1 || round_ == 0)
+        if (round_ != rounds.length - 1 || round_ == 0) {
             revert CustomError("CANT_CANCEL_ROUND");
+        }
 
         rounds.pop();
         supply -= current.tokenAllocation;
@@ -227,21 +221,63 @@ contract InvestmentManager is
             totalAllocation -= item.tokenAmount;
             delete investorAllocations[round_][investors[i]];
 
-            bool success = wethContract.transfer(
-                investors[i],
-                item.etherAmount
-            );
+            bool success = wethContract.transfer(investors[i], item.etherAmount);
             if (!success) revert CustomError("WETH_TRANSFER_FAILED");
         }
     }
 
+    /**
+     * @dev Getter ruturns the curretly active round.
+     * @return current round number
+     */
+    function getCurrentRound() external view returns (uint8) {
+        return round;
+    }
+
+    /**
+     * @dev Getter ruturns the curretly active round details: Round object.
+     * @param round_ round number in question
+     * @return returns Round object
+     */
+    function getRoundInfo(uint8 round_) external view returns (IINVESTOR.Round memory) {
+        return rounds[round_];
+    }
+
+    /**
+     * @dev Getter ruturns the round's min invest amount.
+     * @param round_ round number in question
+     * @return returns min invest amount (ETH)
+     */
+    function getMinInvestAmount(uint8 round_) external view returns (uint256) {
+        IINVESTOR.Round memory item = rounds[round_];
+        return item.etherTarget / 50;
+    }
+
+    /**
+     * @dev Processes ETH investment into a round.
+     * @param round_ round number in question
+     */
+    function investEther(uint8 round_) public payable whenNotPaused {
+        if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
+        invest(round_, msg.value);
+        (bool success,) = payable(address(wethContract)).call{value: msg.value}("");
+        require(success, "TRANSFER_FAILED");
+    }
+
+    /**
+     * @dev internal invest logic.
+     * @param round_ round number in question
+     * @param amount amount of ETH to invest
+     */
     function invest(uint8 round_, uint256 amount) internal {
         Round storage item = rounds[round_];
 
-        if (amount < item.etherTarget / 50)
+        if (amount < item.etherTarget / 50) {
             revert CustomError("INVALID_AMOUNT");
-        if (item.etherInvested + amount > item.etherTarget)
+        }
+        if (item.etherInvested + amount > item.etherTarget) {
             revert CustomError("ROUND_OVERSUBSCRIBED");
+        }
 
         uint256 pos = ipos[round_][msg.sender];
         if (pos == 0) {
@@ -249,8 +285,7 @@ contract InvestmentManager is
             ipos[round_][msg.sender] = investors_[round_].length;
         }
 
-        uint256 tokenAmount = (item.tokenAllocation * amount) /
-            item.etherTarget;
+        uint256 tokenAmount = (item.tokenAllocation * amount) / item.etherTarget;
 
         totalAllocation += tokenAmount;
         item.etherInvested += amount;
@@ -263,13 +298,16 @@ contract InvestmentManager is
         if (item.etherInvested == item.etherTarget) emit RoundClosed(round_);
     }
 
+    /**
+     * @dev internal, deploys vesting contracts while closing the round.
+     * @param round_ round number in question
+     */
     function deployVestingContracts(uint8 round_) internal {
         address[] memory investors = investors_[round_];
         uint256 len = investors.length;
         delete investors;
         for (uint256 i = 0; i < len; ++i) {
-            uint256 alloc = investorAllocations[round][investors[i]]
-                .tokenAmount;
+            uint256 alloc = investorAllocations[round][investors[i]].tokenAmount;
             InvestorVesting vestingContract = new InvestorVesting(
                 address(ecosystemToken),
                 investors[i],
@@ -277,24 +315,21 @@ contract InvestmentManager is
                 uint64(730 days) // duration after cliff
             );
             vestingContracts[round][investors[i]] = address(vestingContract);
-            bool success = ecosystemToken.transfer(
-                address(vestingContract),
-                alloc
-            );
+            bool success = ecosystemToken.transfer(address(vestingContract), alloc);
             if (!success) revert CustomError("ALLOCATION_TRANSFER_FAILED");
         }
     }
 
+    /**
+     * @dev internal, withdraws tokens back to treasury when the round is cancelled.
+     * @param amount amount of tokens to send back to treasury
+     */
     function withdrawTokens(uint256 amount) internal {
-        require(
-            ecosystemToken.transfer(treasury, amount),
-            "ALLOCATION_TRANSFER_FAILED"
-        );
+        require(ecosystemToken.transfer(treasury, amount), "ALLOCATION_TRANSFER_FAILED");
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyRole(UPGRADER_ROLE) {
+    /// @inheritdoc UUPSUpgradeable
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {
         ++version;
         emit Upgrade(msg.sender, newImplementation);
     }

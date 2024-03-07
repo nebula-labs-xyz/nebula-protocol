@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 /**
  * @title Yoda GovernanceTokenV2
  * @notice Burnable contract that votes and has BnM-Bridge functionality
@@ -11,10 +11,16 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {ERC20BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
-import {ERC20PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PausableUpgradeable.sol";
-import {ERC20VotesUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
-import {ERC20PermitUpgradeable, NoncesUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
+import {ERC20BurnableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import {ERC20PausableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PausableUpgradeable.sol";
+import {ERC20VotesUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
+import {
+    ERC20PermitUpgradeable,
+    NoncesUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 
 /// @custom:oz-upgrades-from contracts/ecosystem/GovernanceToken.sol:GovernanceToken
 contract GovernanceTokenV2 is
@@ -27,24 +33,55 @@ contract GovernanceTokenV2 is
     ERC20VotesUpgradeable,
     UUPSUpgradeable
 {
-    error CustomError(string msg);
-    event TGE(uint256 amount);
-    event BridgeMint(address to, uint256 amount);
-    event Upgrade(address indexed src, address indexed implementation);
-    bytes32 private constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    bytes32 private constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
-    bytes32 private constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    /// @dev AccessControl Pauser Role
+    bytes32 internal constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    /// @dev AccessControl Bridge Role
+    bytes32 internal constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
+    /// @dev AccessControl Upgrader Role
+    bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    /// @dev Initial token supply
     uint256 public initialSupply;
+    /// @dev max bridge passthrough amount
     uint256 public maxBridge;
+    /// @dev number of UUPS upgrades
     uint8 public version;
+    /// @dev tge initialized variable
     uint8 public tge;
+
+    /// @dev event emitted at TGE
+    /// @param amount token amount
+    event TGE(uint256 amount);
+    /// @dev event emitted when bridge triggers a mint
+    /// @param to beneficiary address
+    /// @param amount token amount
+    event BridgeMint(address indexed to, uint256 amount);
+    /// @dev event emitted on UUPS upgrades
+    /// @param src sender address
+    /// @param implementation new implementation address
+    event Upgrade(address indexed src, address indexed implementation);
+    /// @dev CustomError message
+    /// @param msg error desciption message
+
+    error CustomError(string msg);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
-    function initializeUUPS(address guardian) public initializer {
+    /**
+     * @notice solidity receive function
+     * @dev reverts on receive ETH
+     */
+    receive() external payable {
+        if (msg.value > 0) revert CustomError("NO_RECEIVE");
+    }
+
+    /**
+     * @dev Initializes the UUPS contract
+     * @param guardian admin address
+     */
+    function initializeUUPS(address guardian) external initializer {
         __ERC20_init("Yoda Coin", "YODA");
         __ERC20Burnable_init();
         __ERC20Pausable_init();
@@ -59,10 +96,12 @@ contract GovernanceTokenV2 is
         version++;
     }
 
-    function initializeTGE(
-        address ecosystem,
-        address treasury
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    /**
+     * @dev Initializes TGE
+     * @param ecosystem ecosystem contract address
+     * @param treasury treasury contract address
+     */
+    function initializeTGE(address ecosystem, address treasury) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (tge > 0) revert CustomError({msg: "TGE_ALREADY_INITIALIZED"});
         ++tge;
 
@@ -76,69 +115,52 @@ contract GovernanceTokenV2 is
         _transfer(address(this), ecosystem, maxEcosystem);
     }
 
-    receive() external payable {
-        if (msg.value > 0) revert CustomError("NO_RECEIVE");
-    }
-
     /**
      * @dev Pause contract.
      */
-    function pause() public onlyRole(PAUSER_ROLE) {
+    function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
     /**
      * @dev Unpause contract.
      */
-    function unpause() public onlyRole(PAUSER_ROLE) {
+    function unpause() external onlyRole(PAUSER_ROLE) {
         _unpause();
     }
 
     /**
-     * @dev Facilitates Bridge BnM functionality.
+     * @dev Facilitates Bridge BnM functionality called by the bridge app.
+     * @param to beneficiary address
+     * @param amount token amount
      */
-    function bridgeMint(
-        address to,
-        uint256 amount
-    ) external onlyRole(BRIDGE_ROLE) {
+    function bridgeMint(address to, uint256 amount) external onlyRole(BRIDGE_ROLE) {
         if (amount > maxBridge) revert CustomError({msg: "BRIDGE_LIMIT"});
-        if (amount + totalSupply() > initialSupply)
+        if (amount + totalSupply() > initialSupply) {
             revert CustomError({msg: "BRIDGE_PROBLEM"});
+        }
 
         emit BridgeMint(to, amount);
         _mint(to, amount);
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyRole(UPGRADER_ROLE) {
-        ++version;
-        emit Upgrade(msg.sender, newImplementation);
+    // The following functions are overrides required by Solidity.
+    /// @inheritdoc ERC20PermitUpgradeable
+    function nonces(address owner) public view override(ERC20PermitUpgradeable, NoncesUpgradeable) returns (uint256) {
+        return super.nonces(owner);
     }
 
-    function _update(
-        address from,
-        address to,
-        uint256 value
-    )
+    /// @inheritdoc ERC20Upgradeable
+    function _update(address from, address to, uint256 value)
         internal
-        override(
-            ERC20Upgradeable,
-            ERC20PausableUpgradeable,
-            ERC20VotesUpgradeable
-        )
+        override(ERC20Upgradeable, ERC20PausableUpgradeable, ERC20VotesUpgradeable)
     {
         super._update(from, to, value);
     }
 
-    function nonces(
-        address owner
-    )
-        public
-        view
-        override(ERC20PermitUpgradeable, NoncesUpgradeable)
-        returns (uint256)
-    {
-        return super.nonces(owner);
+    /// @inheritdoc UUPSUpgradeable
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {
+        ++version;
+        emit Upgrade(msg.sender, newImplementation);
     }
 }

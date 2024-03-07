@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
 interface IINVESTOR {
     event RoundClosed(uint8 round);
@@ -35,12 +35,7 @@ interface IINVESTOR {
 
     function getMinInvestAmount(uint8 round) external view returns (uint256);
 
-    function createRound(
-        uint64 start,
-        uint64 duration,
-        uint256 etherTarget,
-        uint256 tokenAlloc
-    ) external;
+    function createRound(uint64 start, uint64 duration, uint256 etherTarget, uint256 tokenAlloc) external;
 
     function investEther(uint8 round) external payable;
 

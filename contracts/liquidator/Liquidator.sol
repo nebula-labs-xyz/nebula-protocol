@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
-/**  
-      ,,       ,,  ,,    ,,,    ,,   ,,,      ,,,    ,,,   ,,,          ,,,
-     ███▄     ██  ███▀▀▀███▄   ██▄██▀▀██▄    ██▌     ██▌  ██▌        ▄▄███▄▄
-    █████,   ██  ██▌          ██▌     └██▌  ██▌     ██▌  ██▌        ╟█   ╙██ 
-    ██ └███ ██  ██▌└██╟██   l███▀▄███╟█    ██      ╟██  ╟█i        ▐█▌█▀▄██╟
-   ██   ╙████  ██▌          ██▌     ,██▀   ╙██    ▄█▀  ██▌        ▐█▌    ██ 
-  ██     ╙██  █████▀▀▄██▀  ██▌██▌╙███▀`     ▀██▄██▌   █████▀▄██▀ ▐█▌    ██╟ 
- ¬─      ¬─   ¬─¬─  ¬─¬─'  ¬─¬─¬─¬ ¬─'       ¬─¬─    '¬─   '─¬   ¬─     ¬─'
-
+pragma solidity ^0.8.23;
+/**
+ * ,,       ,,  ,,    ,,,    ,,   ,,,      ,,,    ,,,   ,,,          ,,,
+ *      ███▄     ██  ███▀▀▀███▄   ██▄██▀▀██▄    ██▌     ██▌  ██▌        ▄▄███▄▄
+ *     █████,   ██  ██▌          ██▌     └██▌  ██▌     ██▌  ██▌        ╟█   ╙██
+ *     ██ └███ ██  ██▌└██╟██   l███▀▄███╟█    ██      ╟██  ╟█i        ▐█▌█▀▄██╟
+ *    ██   ╙████  ██▌          ██▌     ,██▀   ╙██    ▄█▀  ██▌        ▐█▌    ██
+ *   ██     ╙██  █████▀▀▄██▀  ██▌██▌╙███▀`     ▀██▄██▌   █████▀▄██▀ ▐█▌    ██╟
+ *  ¬─      ¬─   ¬─¬─  ¬─¬─'  ¬─¬─¬─¬ ¬─'       ¬─¬─    '¬─   '─¬   ¬─     ¬─'
+ *
  * @title Nebula Protocol Liquidator
  * @notice Liquidation contract example
  * @author Nebula Labs Inc
  * @disclaimer !!! USE AT YOUR OWN RISK !!!
  * @custom:security-contact security@nebula-labs.xyz
  */
+
 import {INEBULA} from "../interfaces/INebula.sol";
 import {IVault} from "../vendor/@balancer-labs/v2-interfaces/contracts/vault/IVault.sol";
 import {IFlashLoanRecipient} from "../vendor/@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol";
@@ -23,19 +24,21 @@ import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
+    /// @dev USDC token instance
     IERC20 private usdcContract;
-    IVault private balancerVault; // 0xBA12222222228d8Ba445958a75a0704d566BF2C8
+    /// @dev balancer vault instance
+    /// @notice mainnet address 0xBA12222222228d8Ba445958a75a0704d566BF2C8
+    IVault private balancerVault;
+    /// @dev Nebula instance
     INEBULA private nebulaContract;
+    /// @dev gov token instance
     IERC20 private govTokenContract;
+    /// @dev Uniswap router instance
     ISwapRouter private uniswapRouter;
 
-    constructor(
-        address usdc,
-        address nebula,
-        address balancerVault_,
-        address uniswapRouter_,
-        address govToken
-    ) Ownable(msg.sender) {
+    constructor(address usdc, address nebula, address balancerVault_, address uniswapRouter_, address govToken)
+        Ownable(msg.sender)
+    {
         usdcContract = IERC20(usdc);
         nebulaContract = INEBULA(payable(nebula));
         balancerVault = IVault(balancerVault_);
@@ -43,12 +46,13 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
         govTokenContract = IERC20(govToken);
     }
 
+    /**
+     * @dev Liquidates borrower positions in the Nebula protocol
+     * @param account address
+     */
     function liquidate(address account) external onlyOwner {
         if (nebulaContract.isLiquidatable(account)) {
-            require(
-                govTokenContract.balanceOf(address(this)) >= 20_000 ether,
-                "ERR_INSUFFIENT_LIQUIDATOR_TOKENS"
-            );
+            require(govTokenContract.balanceOf(address(this)) >= 20_000 ether, "ERR_INSUFFIENT_LIQUIDATOR_TOKENS");
 
             uint256 debt = nebulaContract.getAccruedDebt(account);
             uint256 liquidationFee = debt / 100;
@@ -61,14 +65,23 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
         }
     }
 
-    function makeFlashLoan(
-        IERC20[] memory tokens,
-        uint256[] memory amounts,
-        bytes memory userData
-    ) internal {
+    /**
+     * @dev triggers Balancer flash loan
+     * @param tokens IERC20 instances array
+     * @param amounts corresponding amounts array
+     * @param userData borrower address
+     */
+    function makeFlashLoan(IERC20[] memory tokens, uint256[] memory amounts, bytes memory userData) internal {
         balancerVault.flashLoan(this, tokens, amounts, userData);
     }
 
+    /**
+     * @dev receives Balancer flash loan
+     * @param tokens IERC20 instances array
+     * @param amounts corresponding amounts array
+     * @param feeAmounts corresponding fee amounts array
+     * @param userData borrower address
+     */
     function receiveFlashLoan(
         IERC20[] memory tokens,
         uint256[] memory amounts,
@@ -77,9 +90,7 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
     ) external override {
         require(msg.sender == address(balancerVault), "ERR_ACCESS_CONTROL");
         address target = address(uint160(bytes20(userData)));
-        address[] memory assets = nebulaContract.getUserCollateralAssets(
-            target
-        );
+        address[] memory assets = nebulaContract.getUserCollateralAssets(target);
         uint256 len = assets.length;
 
         uint256[] memory tokenAmounts = new uint256[](len);
@@ -90,55 +101,36 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
             }
         }
 
-        SafeERC20.forceApprove(
-            usdcContract,
-            address(nebulaContract),
-            amounts[0]
-        );
+        SafeERC20.forceApprove(usdcContract, address(nebulaContract), amounts[0]);
         nebulaContract.liquidate(target); // 🚩 🚩 🚩 🚩 🚩 //
 
         uint256 recievedBase;
         for (uint256 i = 0; i < len; ++i) {
             if (tokenAmounts[i] > 0) {
-                INEBULA.Asset memory assetInfo = nebulaContract.getAssetInfo(
-                    assets[i]
-                );
-                uint256 assetPrice = nebulaContract.getAssetPrice(
-                    assetInfo.oracleUSD
-                );
-                uint256 amountOutMin = (tokenAmounts[i] * assetPrice * 99) /
-                    10 ** assetInfo.oracleDecimals /
-                    100;
-                uint256 outAmount = uniswapV3(
-                    assets[i],
-                    tokenAmounts[i],
-                    amountOutMin
-                );
+                INEBULA.Asset memory assetInfo = nebulaContract.getAssetInfo(assets[i]);
+                uint256 assetPrice = nebulaContract.getAssetPrice(assetInfo.oracleUSD);
+                uint256 amountOutMin = (tokenAmounts[i] * assetPrice * 99) / 10 ** assetInfo.oracleDecimals / 100;
+                uint256 outAmount = uniswapV3(assets[i], tokenAmounts[i], amountOutMin);
                 recievedBase += outAmount;
             }
         }
 
         require(recievedBase > amounts[0] + feeAmounts[0], "ERR_PROFIT_TARGET");
-        SafeERC20.safeTransfer(
-            tokens[0],
-            address(balancerVault),
-            amounts[0] + feeAmounts[0]
-        );
+        SafeERC20.safeTransfer(tokens[0], address(balancerVault), amounts[0] + feeAmounts[0]);
     }
 
-    function uniswapV3(
-        address asset,
-        uint256 swapAmount,
-        uint256 amountOutMin
-    ) internal returns (uint256) {
+    /**
+     * @dev perform asset swap to USDC
+     * @param asset address
+     * @param swapAmount amount of asset you want to swap
+     * @param amountOutMin how much to get back in USDC
+     * @return amountOut of the swap
+     */
+    function uniswapV3(address asset, uint256 swapAmount, uint256 amountOutMin) internal returns (uint256) {
         uint24 poolFee = 3000;
         address usdc = address(usdcContract);
 
-        SafeERC20.forceApprove(
-            IERC20(asset),
-            address(uniswapRouter),
-            swapAmount
-        );
+        SafeERC20.forceApprove(IERC20(asset), address(uniswapRouter), swapAmount);
 
         uint256 amountOut = uniswapRouter.exactInputSingle(
             ISwapRouter.ExactInputSingleParams({
@@ -158,6 +150,9 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
         return amountOut;
     }
 
+    /**
+     * @dev withdraws profit in USDC, and gov tokens required to make the liquidation (20_000e18)
+     */
     function withdraw() external onlyOwner {
         uint256 profit = usdcContract.balanceOf(address(this));
         uint256 govBalance = govTokenContract.balanceOf(address(this));

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
 interface IBRIDGE {
     event Upgrade(address indexed src, address indexed implementation);
@@ -7,14 +7,7 @@ interface IBRIDGE {
     event DelistToken(address indexed token);
     event AddChain(uint256 chainId);
     event RemoveChain(uint256 chainId);
-    event Bridged(
-        uint256 transactionID,
-        address from,
-        address to,
-        address token,
-        uint256 amount,
-        uint256 destChainId
-    );
+    event Bridged(uint256 transactionID, address from, address to, address token, uint256 amount, uint256 destChainId);
 
     error CustomError(string msg);
 
@@ -60,30 +53,17 @@ interface IBRIDGE {
 
     function getListedCount() external view returns (uint256);
 
-    function getChainTransactionCount(
-        uint256 chainId
-    ) external view returns (uint256);
+    function getChainTransactionCount(uint256 chainId) external view returns (uint256);
 
-    function getTransaction(
-        uint256 tranId
-    ) external view returns (Transaction memory);
+    function getTransaction(uint256 tranId) external view returns (Transaction memory);
 
     function getChain(uint256 chainId) external view returns (Chain memory);
 
     function getTokenInfo(address token) external view returns (Token memory);
 
-    function listToken(
-        string calldata name,
-        string calldata symbol,
-        address token
-    ) external;
+    function listToken(string calldata name, string calldata symbol, address token) external;
 
     function removeToken(address token) external;
 
-    function bridgeTokens(
-        address token,
-        address to,
-        uint256 amount,
-        uint256 destChainId
-    ) external returns (uint256);
+    function bridgeTokens(address token, address to, uint256 amount, uint256 destChainId) external returns (uint256);
 }

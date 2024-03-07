@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v5.0.0) (finance/VestingWallet.sol)
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 /**
  * @title Yoda Investor Vesting Contract
  * @notice Investor Vesting contract
@@ -16,22 +16,25 @@ import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract InvestorVesting is IVESTING, Context, Ownable {
-    IERC20 private tokenContract;
+    /// @dev token contract instance
+    IERC20 internal tokenContract;
+    /// @dev amount of tokens released
     mapping(address token => uint256) private _erc20Released;
+    /// @dev start timestamp
     uint64 private _start;
+    /// @dev duration seconds
     uint64 private _duration;
+    /// @dev token address
     address private _token;
 
     /**
      * @dev Sets the owner to beneficiary address, the start timestamp and the
      * vesting duration of the vesting contract.
      */
-    constructor(
-        address token,
-        address beneficiary,
-        uint64 startTimestamp,
-        uint64 durationSeconds
-    ) payable Ownable(beneficiary) {
+    constructor(address token, address beneficiary, uint64 startTimestamp, uint64 durationSeconds)
+        payable
+        Ownable(beneficiary)
+    {
         _token = token;
         _start = startTimestamp;
         _duration = durationSeconds;
@@ -39,47 +42,11 @@ contract InvestorVesting is IVESTING, Context, Ownable {
     }
 
     /**
-     * @dev The contract should not be able to receive Eth.
+     * @notice solidity receive function
+     * @dev reverts on receive ETH
      */
-
     receive() external payable {
-        if (msg.value > 0) revert CustomError("ERR_NO_RECEIVE");
-    }
-
-    /**
-     * @dev Getter for the start timestamp.
-     */
-    function start() public view virtual returns (uint256) {
-        return _start;
-    }
-
-    /**
-     * @dev Getter for the vesting duration.
-     */
-    function duration() public view virtual returns (uint256) {
-        return _duration;
-    }
-
-    /**
-     * @dev Getter for the end timestamp.
-     */
-    function end() public view virtual returns (uint256) {
-        return start() + duration();
-    }
-
-    /**
-     * @dev Getter for the amount of token already released
-     */
-    function released() public view virtual returns (uint256) {
-        return _erc20Released[_token];
-    }
-
-    /**
-     * @dev Getter for the amount of releasable `token` tokens. `token` should be the address of an
-     * IERC20 contract.
-     */
-    function releasable() public view virtual returns (uint256) {
-        return vestedAmount(uint64(block.timestamp)) - released();
+        if (msg.value > 0) revert CustomError("NO_RECEIVE");
     }
 
     /**
@@ -95,26 +62,62 @@ contract InvestorVesting is IVESTING, Context, Ownable {
     }
 
     /**
-     * @dev Calculates the amount of tokens that has already vested. Default implementation is a linear vesting curve.
+     * @dev Getter for the start timestamp.
+     * @return start timestamp
      */
-    function vestedAmount(
-        uint64 timestamp
-    ) internal view virtual returns (uint256) {
-        return
-            _vestingSchedule(
-                tokenContract.balanceOf(address(this)) + released(),
-                timestamp
-            );
+    function start() public view virtual returns (uint256) {
+        return _start;
+    }
+
+    /**
+     * @dev Getter for the vesting duration.
+     * @return duration seconds
+     */
+    function duration() public view virtual returns (uint256) {
+        return _duration;
+    }
+
+    /**
+     * @dev Getter for the end timestamp.
+     * @return end timnestamp
+     */
+    function end() public view virtual returns (uint256) {
+        return start() + duration();
+    }
+
+    /**
+     * @dev Getter for the amount of token already released
+     * @return amount of tokens released so far
+     */
+    function released() public view virtual returns (uint256) {
+        return _erc20Released[_token];
+    }
+
+    /**
+     * @dev Getter for the amount of vested `ERC20` tokens.
+     * @return amount of vested tokens
+     */
+    function releasable() public view virtual returns (uint256) {
+        return vestedAmount(uint64(block.timestamp)) - released();
+    }
+
+    /**
+     * @dev Calculates the amount of tokens that has already vested. Default implementation is a linear vesting curve.
+     * @param timestamp current timestamp
+     * @return amount vested
+     */
+    function vestedAmount(uint64 timestamp) internal view virtual returns (uint256) {
+        return _vestingSchedule(tokenContract.balanceOf(address(this)) + released(), timestamp);
     }
 
     /**
      * @dev Virtual implementation of the vesting formula. This returns the amount vested, as a function of time, for
      * an asset given its total historical allocation.
+     * @param totalAllocation initial amount
+     * @param timestamp current timestamp
+     * @return amount vested
      */
-    function _vestingSchedule(
-        uint256 totalAllocation,
-        uint64 timestamp
-    ) internal view virtual returns (uint256) {
+    function _vestingSchedule(uint256 totalAllocation, uint64 timestamp) internal view virtual returns (uint256) {
         if (timestamp < start()) {
             return 0;
         } else if (timestamp >= end()) {

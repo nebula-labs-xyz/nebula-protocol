@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
 interface ITREASURY {
     event Upgrade(address indexed src, address indexed implementation);
     event EtherReleased(address indexed to, uint256 amount);
-    event ERC20Released(
-        address indexed token,
-        address indexed to,
-        uint256 amount
-    );
+    event ERC20Released(address indexed token, address indexed to, uint256 amount);
 
     error CustomError(string msg);
 

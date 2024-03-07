@@ -1,21 +1,17 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
 interface IECOSYSTEM {
     event Burn(uint256 amount);
     event Reward(address indexed to, uint256 amount);
     event AirDrop(address[] addresses, uint256 amount);
     event Upgrade(address indexed src, address indexed implementation);
-    event AddPartner(
-        address indexed account,
-        address indexed vesting,
-        uint256 amount
-    );
+    event AddPartner(address indexed account, address indexed vesting, uint256 amount);
 
     error CustomError(string msg);
 
     /**
-     * @dev Getter for the total reward supply.
+     * @dev Getter for the starting reward supply.
      */
     function rewardSupply() external view returns (uint256);
 
@@ -25,29 +21,29 @@ interface IECOSYSTEM {
     function maxReward() external view returns (uint256);
 
     /**
-     * @dev Getter for the total airdrop supply.
+     * @dev Getter for the starting airdrop supply.
      */
     function airdropSupply() external view returns (uint256);
 
     /**
-     * @dev Getter for the total partnership supply.
+     * @dev Getter for the starting partnership supply.
      */
     function partnershipSupply() external view returns (uint256);
 
     /**
-     * @dev Getter for the total amount of tokens issued as reward.
+     * @dev Getter for the issued amount of tokens issued as reward.
      */
-    function totalReward() external view returns (uint256);
+    function issuedReward() external view returns (uint256);
 
     /**
-     * @dev Getter for the total amount of tokens airdropped.
+     * @dev Getter for the issued amount of tokens airdropped.
      */
-    function totalAirDrop() external view returns (uint256);
+    function issuedAirDrop() external view returns (uint256);
 
     /**
-     * @dev Getter for the total amount of tokens allocated to partners.
+     * @dev Getter for the issued amount of tokens allocated to partners.
      */
-    function totalPartnership() external view returns (uint256);
+    function issuedPartnership() external view returns (uint256);
 
     /**
      * @dev Getter for the UUPS version.
@@ -75,6 +71,13 @@ interface IECOSYSTEM {
      * Emits a {AirDrop} event.
      */
     function airdrop(address[] calldata winners, uint256 amount) external;
+
+    /**
+     * @dev Verify airdrop list is valid
+     *
+     * @return true
+     */
+    function verifyAirdrop(address[] calldata winners, uint256 amount) external returns (bool);
 
     /**
      * @dev Rewards liquidity providers participating in the Nebula Protocol.

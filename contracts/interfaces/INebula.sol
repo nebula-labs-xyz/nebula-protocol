@@ -1,21 +1,13 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
 interface INEBULA {
     event SupplyLiquidity(address indexed src, uint256 amount);
     event Exchange(address indexed src, uint256 amountIn, uint256 amountOut);
     event Borrow(address indexed src, uint256 amount);
     event Repay(address indexed src, uint256 amount);
-    event SupplyCollateral(
-        address indexed src,
-        address indexed asset,
-        uint256 amount
-    );
-    event WithdrawCollateral(
-        address indexed src,
-        address indexed asset,
-        uint256 amount
-    );
+    event SupplyCollateral(address indexed src, address indexed asset, uint256 amount);
+    event WithdrawCollateral(address indexed src, address indexed asset, uint256 amount);
     event Reward(address indexed to, uint256 amount);
     event Liquidated(address indexed src, uint256 amount);
     event UpdateCollateralConfig(address indexed token);
@@ -88,23 +80,13 @@ interface INEBULA {
 
     function exchange(uint256 amount) external;
 
-    function getProtocolSnapshot()
-        external
-        view
-        returns (ProtocolSnapshot memory);
+    function getProtocolSnapshot() external view returns (ProtocolSnapshot memory);
 
-    function getUserCollateralAssets(
-        address src
-    ) external view returns (address[] memory);
+    function getUserCollateralAssets(address src) external view returns (address[] memory);
 
-    function getCollateralInfo(
-        address token
-    ) external view returns (Asset memory);
+    function getCollateralInfo(address token) external view returns (Asset memory);
 
-    function getCollateral(
-        address src,
-        address asset
-    ) external view returns (uint256);
+    function getCollateral(address src, address asset) external view returns (uint256);
 
     function getLoanPrincipal(address src) external view returns (uint256);
 

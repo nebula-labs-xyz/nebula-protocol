@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
-/**  
-      ,,       ,,  ,,    ,,,    ,,   ,,,      ,,,    ,,,   ,,,          ,,,
-     ███▄     ██  ███▀▀▀███▄   ██▄██▀▀██▄    ██▌     ██▌  ██▌        ▄▄███▄▄
-    █████,   ██  ██▌          ██▌     └██▌  ██▌     ██▌  ██▌        ╟█   ╙██ 
-    ██ └███ ██  ██▌└██╟██   l███▀▄███╟█    ██      ╟██  ╟█i        ▐█▌█▀▄██╟
-   ██   ╙████  ██▌          ██▌     ,██▀   ╙██    ▄█▀  ██▌        ▐█▌    ██ 
-  ██     ╙██  █████▀▀▄██▀  ██▌██▌╙███▀`     ▀██▄██▌   █████▀▄██▀ ▐█▌    ██╟ 
- ¬─      ¬─   ¬─¬─  ¬─¬─'  ¬─¬─¬─¬ ¬─'       ¬─¬─    '¬─   '─¬   ¬─     ¬─'
-
+pragma solidity ^0.8.23;
+/**
+ * ,,       ,,  ,,    ,,,    ,,   ,,,      ,,,    ,,,   ,,,          ,,,
+ *      ███▄     ██  ███▀▀▀███▄   ██▄██▀▀██▄    ██▌     ██▌  ██▌        ▄▄███▄▄
+ *     █████,   ██  ██▌          ██▌     └██▌  ██▌     ██▌  ██▌        ╟█   ╙██
+ *     ██ └███ ██  ██▌└██╟██   l███▀▄███╟█    ██      ╟██  ╟█i        ▐█▌█▀▄██╟
+ *    ██   ╙████  ██▌          ██▌     ,██▀   ╙██    ▄█▀  ██▌        ▐█▌    ██
+ *   ██     ╙██  █████▀▀▄██▀  ██▌██▌╙███▀`     ▀██▄██▌   █████▀▄██▀ ▐█▌    ██╟
+ *  ¬─      ¬─   ¬─¬─  ¬─¬─'  ¬─¬─¬─¬ ¬─'       ¬─¬─    '¬─   '─¬   ¬─     ¬─'
+ *
  * @title Nebula Protocol V2
  * @notice An efficient monolithic lending protocol
  * @author Nebula Labs Inc
@@ -25,9 +25,10 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import {ERC20PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PausableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {AggregatorV3Interface} from "../vendor/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {ERC20PausableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PausableUpgradeable.sol";
 
 /// @custom:oz-upgrades-from contracts/lender/Nebula.sol:Nebula
 contract NebulaV2 is
@@ -40,35 +41,64 @@ contract NebulaV2 is
     YodaMath
 {
     using EnumerableSet for EnumerableSet.AddressSet;
-    EnumerableSet.AddressSet internal listedAsset;
-    bytes32 private constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    bytes32 private constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    bytes32 private constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
-    IERC20 private baseContract;
-    IERC20 private tokenContract;
-    IECOSYSTEM private ecosystemContract;
-    uint256 public totalBorrow;
-    uint256 public totalBase;
-    uint256 public withdrawnLiquidity;
-    uint256 public supplyInterestAccrueIndex;
-    uint256 public loanInterestAccrueIndex;
-    uint256 public targetReward;
-    uint256 public rewardInterval;
-    uint256 public rewardableSupply;
-    uint256 public baseBorrowRate;
-    uint256 public baseProfitTarget;
-    uint256 public liquidatorThreshold;
-    uint8 public version;
-    address private treasury;
-    address private timelock;
 
+    /// @dev AccessControl Pauser Role
+    bytes32 internal constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    /// @dev AccessControl Manager Role
+    bytes32 internal constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    /// @dev AccessControl Upgrader Role
+    bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    /// @dev EnumerableSet of listed collateral assets
+    EnumerableSet.AddressSet internal listedAsset;
+    /// @dev USDC token instance
+    IERC20 internal baseContract;
+    /// @dev governance token instance
+    IERC20 internal tokenContract;
+    /// @dev ecosystem contract instance
+    IECOSYSTEM internal ecosystemContract;
+    /// @dev total borrow amount in USDC
+    uint256 public totalBorrow;
+    /// @dev total amount of liquidity in USDC
+    uint256 public totalBase;
+    /// @dev total amount withdrawn by LPs
+    uint256 public withdrawnLiquidity;
+    /// @dev total amount of interest paid out to LPs
+    uint256 public supplyInterestAccrueIndex;
+    /// @dev total amount of interest accrued by this contract
+    uint256 public loanInterestAccrueIndex;
+    /// @dev reward amount per base rewardable supply
+    uint256 public targetReward;
+    /// @dev reward interval rewards are paid out to LPs
+    uint256 public rewardInterval;
+    /// @dev amount of supply LPs must provide to qualify for reward
+    uint256 public rewardableSupply;
+    /// @dev minimal borrow rate charged for borrowing
+    uint256 public baseBorrowRate;
+    /// @dev rate of commission this contract charges
+    uint256 public baseProfitTarget;
+    /// @dev amount of gov tokens liquidator is required to have to run liquidations
+    uint256 public liquidatorThreshold;
+    /// @dev number of UUPS upgrades
+    uint8 public version;
+    /// @dev treasury address
+    address public treasury;
+    /// @dev timelock address
+    address public timelock;
+    /// @dev collateral asset Info mapping
     mapping(address => Asset) internal assetInfo;
+    /// @dev borrower principal mapping
     mapping(address => uint256) internal loans;
+    /// @dev borrower last interest accrual timestamp mapping
     mapping(address => uint256) internal loanAccrueTimeIndex;
+    /// @dev LPs last interest accrual timestamp mapping
     mapping(address => uint256) internal liquidityAccrueTimeIndex;
+    /// @dev total collateral amounts by asset mapping
     mapping(address => uint256) internal totalCollateral;
+    /// @dev borrower address position mapping used to remove userCollateralAssets when needed
     mapping(address => uint256) internal ucaPos;
+    /// @dev borrower collateral assets address mapping
     mapping(address => address[]) internal userCollateralAssets;
+    /// @dev borrower collateral assets (by user address, by asset address) mapping
     mapping(address => mapping(address => uint256)) internal collateral;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -76,6 +106,23 @@ contract NebulaV2 is
         _disableInitializers();
     }
 
+    /**
+     * @notice solidity receive function
+     * @dev reverts on receive ETH
+     */
+    receive() external payable {
+        if (msg.value > 0) revert("ERR_NO_RECEIVE");
+    }
+
+    /**
+     * @dev Initializes the UUPS contract
+     * @param usdc USDC address
+     * @param govToken governance token address
+     * @param ecosystem address
+     * @param treasury_ address
+     * @param timelock_ address
+     * @param guardian admin address
+     */
     function initialize(
         address usdc,
         address govToken,
@@ -108,10 +155,6 @@ contract NebulaV2 is
         ++version;
     }
 
-    receive() external payable {
-        if (msg.value > 0) revert("ERR_NO_RECEIVE");
-    }
-
     /**
      * @dev Pause contract.
      */
@@ -128,12 +171,10 @@ contract NebulaV2 is
 
     /**
      * @dev Supply USDC liquidity to protocol, and receive Nebula tokens.
+     * @param amount to be supplied in USDC (6 decimals)
      */
     function supplyLiquidity(uint256 amount) external {
-        require(
-            baseContract.balanceOf(msg.sender) >= amount,
-            "ERR_INSUFFICIENT_BALANCE"
-        );
+        require(baseContract.balanceOf(msg.sender) >= amount, "ERR_INSUFFICIENT_BALANCE");
         uint256 total = baseContract.balanceOf(address(this)) + totalBorrow;
         if (total == 0) total = WAD;
         uint256 supply = totalSupply();
@@ -147,14 +188,12 @@ contract NebulaV2 is
         _mint(msg.sender, value);
 
         emit SupplyLiquidity(msg.sender, amount);
-        require(
-            baseContract.transferFrom(msg.sender, address(this), amount),
-            "ERR_TRANSFER_IN_FAILED"
-        );
+        require(baseContract.transferFrom(msg.sender, address(this), amount), "ERR_TRANSFER_IN_FAILED");
     }
 
     /**
      * @dev Exchange Nebula tokens back to USDC, receive yield.
+     * @param amount to be exchanged in Nebula yield token (18 decimals)
      */
     function exchange(uint256 amount) external {
         uint256 userBal = balanceOf(msg.sender);
@@ -185,315 +224,12 @@ contract NebulaV2 is
         _burn(msg.sender, amount);
 
         emit Exchange(msg.sender, amount, value);
-        require(
-            baseContract.transfer(msg.sender, value),
-            "ERR_TRANSFER_OUT_FAILED"
-        );
-    }
-
-    /**
-     * @dev Calculates if reward is due to lenders on exchange operation
-     */
-    function rewardInternal(uint256 amount) internal {
-        bool rewardable = block.timestamp - rewardInterval >=
-            liquidityAccrueTimeIndex[msg.sender] &&
-            amount >= rewardableSupply;
-
-        if (rewardable) {
-            uint256 duration = block.timestamp -
-                liquidityAccrueTimeIndex[msg.sender];
-            uint256 reward = (targetReward * duration) / rewardInterval;
-            uint256 maxReward = ecosystemContract.maxReward();
-            uint256 target = reward > maxReward ? maxReward : reward;
-            delete liquidityAccrueTimeIndex[msg.sender];
-            emit Reward(msg.sender, target);
-            ecosystemContract.reward(msg.sender, target);
-        }
-    }
-
-    /**
-     * @dev Getter for the current utilization rate.
-     */
-    function getUtilization() public view returns (uint256 u) {
-        if (totalBase == 0 || totalBorrow == 0) {
-            u = 0;
-        } else u = (WAD * totalBorrow) / totalBase;
-    }
-
-    /**
-     * @dev Getter for the current supply rate.
-     */
-    function getSupplyRate() public view returns (uint256) {
-        uint256 fee;
-        uint256 supply = totalSupply();
-        uint256 target = (supply * baseProfitTarget) / WAD; //1% commission
-        uint256 total = baseContract.balanceOf(address(this)) + totalBorrow;
-        if (total >= totalBase + target) {
-            fee = target;
-        }
-
-        if (total == 0 || supply == 0) return 0;
-        return ((WAD * total) / (supply + fee)) - WAD; // r = 0.05e6;
-    }
-
-    /**
-     * @dev Getter for the current borrow rate.
-     */
-    function getBorrowRate() public view returns (uint256) {
-        uint256 duration = 365 days;
-        uint256 defaultSupply = WAD;
-        uint256 utilization = getUtilization();
-        if (utilization == 0) return baseBorrowRate;
-        if (loans[msg.sender] > 0) {
-            duration = block.timestamp - loanAccrueTimeIndex[msg.sender];
-        }
-
-        uint256 loan = (defaultSupply * utilization) / WAD;
-        uint256 supplyRateRay = annualRateToRay(getSupplyRate());
-        uint256 supplyInterest = getInterest(
-            defaultSupply,
-            supplyRateRay,
-            duration
-        );
-        uint256 breakEven = breakEvenRate(loan, supplyInterest);
-
-        uint256 rate = breakEven + baseProfitTarget;
-        return rate > baseBorrowRate ? rate : baseBorrowRate;
-    }
-
-    /**
-     * @dev Getter for the  protocol snapshot.
-     */
-    function getProtocolSnapshot()
-        external
-        view
-        returns (ProtocolSnapshot memory)
-    {
-        uint256 utilization = getUtilization();
-        uint256 borrowRate = getBorrowRate();
-        uint256 supplyRate = getSupplyRate();
-
-        return
-            ProtocolSnapshot(
-                utilization,
-                borrowRate,
-                supplyRate,
-                totalBorrow,
-                totalBase,
-                targetReward,
-                rewardInterval,
-                rewardableSupply,
-                baseProfitTarget,
-                liquidatorThreshold
-            );
-    }
-
-    /**
-     * @dev Getter for the current user collateral assets.
-     * @notice Returns borrower collateral assets address array.
-     */
-    function getUserCollateralAssets(
-        address src
-    ) external view returns (address[] memory) {
-        return userCollateralAssets[src];
-    }
-
-    /**
-     * @dev Getter for the individual collateral asset Info.
-     * @notice Returns Asset object.
-     */
-    function getCollateralInfo(
-        address token
-    ) external view returns (Asset memory) {
-        return assetInfo[token];
-    }
-
-    /**
-     * @dev Getter for the current user collateral individual asset amount.
-     * @notice Returns amount of collateral user has of this asset.
-     */
-    function getCollateral(
-        address src,
-        address asset
-    ) external view returns (uint256) {
-        return collateral[src][asset];
-    }
-
-    /**
-     * @dev Getter for the total amount of particular asset collateral inside the protocol.
-     * @notice Returns uint256 amount.
-     */
-    function getTotalCollateral(address asset) external view returns (uint256) {
-        return totalCollateral[asset];
-    }
-
-    /**
-     * @dev Getter returns principal amount owed by a borrower on last transaction
-     */
-    function getLoanPrincipal(address src) external view returns (uint256) {
-        return loans[src];
-    }
-
-    /**
-     * @dev Getter returns total amount owed by a borrower
-     */
-    function getAccruedDebt(address src) public view returns (uint256 d) {
-        uint256 time = block.timestamp - loanAccrueTimeIndex[src];
-        require(time > 0, "ERR_TIMESPAN");
-        uint256 rateRay = annualRateToRay(getBorrowRate());
-        d = accrueInterest(loans[src], rateRay, time);
-    }
-
-    /**
-     * @dev Getter returns all listed collateral assets.
-     */
-    function getListings() external view returns (address[] memory array) {
-        array = listedAsset.values();
-    }
-
-    /**
-     * @dev Getter checks if collateral asset is listed.
-     */
-    function isListed(address token) external view returns (bool) {
-        return listedAsset.contains(token);
-    }
-
-    /**
-     * @dev Getter returns the total number of listed collateral assets.
-     */
-    function listedAssets() external view returns (uint256) {
-        return listedAsset.length();
-    }
-
-    /**
-     * @dev Getter returns the price of a collateral assets.
-     */
-    function getAssetPrice(address oracle) public view returns (uint256) {
-        (, int256 answer, , , ) = AggregatorV3Interface(oracle)
-            .latestRoundData();
-        return uint256(answer);
-    }
-
-    /**
-     * @dev Getter returns the Asset object.
-     */
-    function getAssetInfo(address asset) external view returns (Asset memory) {
-        return assetInfo[asset];
-    }
-
-    /**
-     * @dev Getter returns true if borrowed amount reaches the collateral liquidation threshold.
-     */
-    function isLiquidatable(address src) public view returns (bool) {
-        if (loans[src] == 0) return false;
-        uint256 balance = getAccruedDebt(src);
-        address[] memory assets = userCollateralAssets[src];
-        uint256 len = assets.length;
-        uint256 cValue;
-
-        for (uint256 i = 0; i < len; ++i) {
-            uint256 amount = collateral[src][assets[i]];
-            if (amount > 0) {
-                Asset memory token = assetInfo[assets[i]];
-                uint256 price = getAssetPrice(token.oracleUSD);
-                cValue +=
-                    (amount * price * token.liquidationThreshold * WAD) /
-                    10 ** token.decimals /
-                    1000 /
-                    10 ** token.oracleDecimals;
-            }
-        }
-
-        return balance >= cValue;
-    }
-
-    /**
-     * @dev Liquidates borrower collateral assets.
-     *
-     * Emits a {Liquidated} event.
-     */
-    function liquidate(address src) external whenNotPaused {
-        require(
-            tokenContract.balanceOf(msg.sender) >= liquidatorThreshold,
-            "ERR_NOT_LIQUIDATOR"
-        );
-        require(isLiquidatable(src), "ERR_NOT_LIQUIDATABLE");
-        uint256 balance = getAccruedDebt(src);
-        uint256 liquidationFee = (balance * baseProfitTarget) / WAD; //1% commission
-        loanInterestAccrueIndex += balance - loans[src];
-        delete loans[src];
-
-        baseContract.transferFrom(
-            msg.sender,
-            address(this),
-            balance + liquidationFee
-        );
-
-        address[] memory assets = userCollateralAssets[src];
-        uint256 len = assets.length;
-        delete userCollateralAssets[src];
-
-        _mint(treasury, liquidationFee / 2);
-        emit Liquidated(src, balance);
-
-        for (uint256 i = 0; i < len; ++i) {
-            uint256 amount = collateral[src][assets[i]];
-            if (amount > 0) {
-                delete collateral[src][assets[i]];
-                TH.safeTransfer(IERC20(assets[i]), msg.sender, amount);
-            }
-        }
-    }
-
-    /**
-     * @dev Getter calculates the health factor of a borrower.
-     */
-    function healthFactor(address src) external view returns (uint256) {
-        if (loans[src] == 0) return 0;
-        uint256 balance = getAccruedDebt(src);
-        address[] memory assets = userCollateralAssets[src];
-        uint256 len = assets.length;
-        uint256 liqLevel;
-
-        for (uint256 i = 0; i < len; ++i) {
-            uint256 amount = collateral[src][assets[i]];
-            if (amount > 0) {
-                Asset memory token = assetInfo[assets[i]];
-                uint256 price = getAssetPrice(token.oracleUSD);
-                liqLevel +=
-                    (amount * price * token.liquidationThreshold * WAD) /
-                    10 ** token.decimals /
-                    1000 /
-                    10 ** token.oracleDecimals;
-            }
-        }
-        return (liqLevel * WAD) / balance;
-    }
-
-    /**
-     * @dev Getter calculates the max borrowable amount based on user collateral.
-     */
-    function creditValue(address src) public view returns (uint256 value) {
-        address[] memory assets = userCollateralAssets[src];
-        uint256 len = assets.length;
-
-        for (uint256 i = 0; i < len; ++i) {
-            uint256 amount = collateral[src][assets[i]];
-            if (amount > 0) {
-                Asset memory token = assetInfo[assets[i]];
-                uint256 price = getAssetPrice(token.oracleUSD);
-                value +=
-                    (amount * price * token.borrowThreshold * WAD) /
-                    10 ** token.decimals /
-                    1000 /
-                    10 ** token.oracleDecimals;
-            }
-        }
+        require(baseContract.transfer(msg.sender, value), "ERR_TRANSFER_OUT_FAILED");
     }
 
     /**
      * @dev Allows user to borrow USDC against his collateral.
-     *
+     * @param amount to be borrowed
      * Emits a {Borrow} event.
      */
     function borrow(uint256 amount) external whenNotPaused {
@@ -515,15 +251,12 @@ contract NebulaV2 is
         loans[msg.sender] = amount + balance;
 
         emit Borrow(msg.sender, amount);
-        require(
-            baseContract.transfer(msg.sender, amount),
-            "ERR_TRANSFER_OUT_FAILED"
-        );
+        require(baseContract.transfer(msg.sender, amount), "ERR_TRANSFER_OUT_FAILED");
     }
 
     /**
      * @dev Allows borrower to repay part of the debt.
-     *
+     * @param amount to be repayed
      * Emits a {Repay} event.
      */
     function repay(uint256 amount) external whenNotPaused {
@@ -546,57 +279,22 @@ contract NebulaV2 is
     }
 
     /**
-     * @dev Allows borrower to repay total debt.
-     *
-     * Emits a {Repay} event.
-     */
-    function repayMax() public whenNotPaused {
-        require(loans[msg.sender] > 0, "ERR_NO_EXISTING_LOAN");
-        uint256 balance = getAccruedDebt(msg.sender);
-        totalBorrow = totalBorrow - loans[msg.sender];
-        loanInterestAccrueIndex += balance - loans[msg.sender];
-        delete loanAccrueTimeIndex[msg.sender];
-        delete loans[msg.sender];
-
-        repayInternal(balance);
-    }
-
-    function repayInternal(uint256 amount) internal {
-        emit Repay(msg.sender, amount);
-        require(
-            baseContract.transferFrom(msg.sender, address(this), amount),
-            "ERR_TRANSFER_IN_FAILED"
-        );
-    }
-
-    /**
      * @dev Allows borrower to supply collateral.
-     *
+     * @param asset address
+     * @param amount to be supplied
      * Emits a {SupplyCollateral} event.
      */
-    function supplyCollateral(
-        address asset,
-        uint256 amount
-    ) external whenNotPaused {
+    function supplyCollateral(address asset, uint256 amount) external whenNotPaused {
         require(listedAsset.contains(asset), "ERR_UNSUPPORTED_ASSET");
         Asset memory token = assetInfo[asset];
         require(token.active == 1, "ERR_DISABLED_ASSET");
-        require(
-            totalCollateral[asset] + amount <= token.maxSupplyThreshold,
-            "ERR_ASSET_MAX_THRESHOLD"
-        );
+        require(totalCollateral[asset] + amount <= token.maxSupplyThreshold, "ERR_ASSET_MAX_THRESHOLD");
 
         IERC20 assetContract = IERC20(asset);
-        require(
-            assetContract.balanceOf(msg.sender) >= amount,
-            "ERR_INSUFFICIENT_BALANCE"
-        );
+        require(assetContract.balanceOf(msg.sender) >= amount, "ERR_INSUFFICIENT_BALANCE");
 
         if (collateral[msg.sender][asset] == 0) {
-            require(
-                userCollateralAssets[msg.sender].length < 20,
-                "ERR_TOO_MANY_ASSETS"
-            );
+            require(userCollateralAssets[msg.sender].length < 20, "ERR_TOO_MANY_ASSETS");
             userCollateralAssets[msg.sender].push(asset);
             ucaPos[asset] = userCollateralAssets[msg.sender].length - 1;
         }
@@ -610,17 +308,12 @@ contract NebulaV2 is
 
     /**
      * @dev Allows borrower to withdraw collateral.
-     *
+     * @param asset address
+     * @param amount to be withdrawn
      * Emits a {WithdrawCollateral} event.
      */
-    function withdrawCollateral(
-        address asset,
-        uint256 amount
-    ) public whenNotPaused {
-        require(
-            collateral[msg.sender][asset] >= amount,
-            "ERR_INSUFFICIENT_BALANCE"
-        );
+    function withdrawCollateral(address asset, uint256 amount) external whenNotPaused {
+        require(collateral[msg.sender][asset] >= amount, "ERR_INSUFFICIENT_BALANCE");
 
         collateral[msg.sender][asset] -= amount;
         totalCollateral[asset] -= amount;
@@ -630,9 +323,7 @@ contract NebulaV2 is
             // updateUserCollateralAssets(msg.sender);
             uint256 ipos = ucaPos[asset];
             uint256 len = userCollateralAssets[msg.sender].length;
-            userCollateralAssets[msg.sender][ipos] = userCollateralAssets[
-                msg.sender
-            ][len - 1];
+            userCollateralAssets[msg.sender][ipos] = userCollateralAssets[msg.sender][len - 1];
             userCollateralAssets[msg.sender].pop();
         }
 
@@ -665,26 +356,42 @@ contract NebulaV2 is
     }
 
     /**
-     * @dev Getter returns the LP's rewardable status.
+     * @dev Liquidates borrower collateral assets.
+     * @param src borrower address
+     * Emits a {Liquidated} event.
      */
-    function isRewardable(address src) external view returns (bool) {
-        if (liquidityAccrueTimeIndex[src] == 0) return false;
-        uint256 supply = totalSupply();
-        uint256 baseAmount = (balanceOf(src) * totalBase) / supply;
+    function liquidate(address src) external whenNotPaused {
+        require(tokenContract.balanceOf(msg.sender) >= liquidatorThreshold, "ERR_NOT_LIQUIDATOR");
+        require(isLiquidatable(src), "ERR_NOT_LIQUIDATABLE");
+        uint256 balance = getAccruedDebt(src);
+        uint256 liquidationFee = (balance * baseProfitTarget) / WAD; //1% commission
+        loanInterestAccrueIndex += balance - loans[src];
+        delete loans[src];
 
-        return
-            block.timestamp - rewardInterval >= liquidityAccrueTimeIndex[src] &&
-            baseAmount >= rewardableSupply;
+        baseContract.transferFrom(msg.sender, address(this), balance + liquidationFee);
+
+        address[] memory assets = userCollateralAssets[src];
+        uint256 len = assets.length;
+        delete userCollateralAssets[src];
+
+        _mint(treasury, liquidationFee / 2);
+        emit Liquidated(src, balance);
+
+        for (uint256 i = 0; i < len; ++i) {
+            uint256 amount = collateral[src][assets[i]];
+            if (amount > 0) {
+                delete collateral[src][assets[i]];
+                TH.safeTransfer(IERC20(assets[i]), msg.sender, amount);
+            }
+        }
     }
 
     /**
      * @dev Allows manager to update the base profit target.
-     *
+     * @param rate protocol profit target, default (0.01e6)
      * Emits a {UpdateBaseProfitTarget} event.
      */
-    function updateBaseProfitTarget(
-        uint256 rate
-    ) external onlyRole(MANAGER_ROLE) {
+    function updateBaseProfitTarget(uint256 rate) external onlyRole(MANAGER_ROLE) {
         require(rate >= 0.0025e6, "ERR_INVALID_AMOUNT");
         emit UpdateBaseProfitTarget(rate);
         baseProfitTarget = rate;
@@ -692,12 +399,10 @@ contract NebulaV2 is
 
     /**
      * @dev Allows manager to update the base borrow rate.
-     *
+     * @param rate default borrow rate, default (0.06e6)
      * Emits a {UpdateBaseBorrowRate} event.
      */
-    function updateBaseBorrowRate(
-        uint256 rate
-    ) external onlyRole(MANAGER_ROLE) {
+    function updateBaseBorrowRate(uint256 rate) external onlyRole(MANAGER_ROLE) {
         emit UpdateBaseBorrowRate(rate);
         require(rate >= 0.01e6, "ERR_INVALID_AMOUNT");
         baseBorrowRate = rate;
@@ -705,12 +410,10 @@ contract NebulaV2 is
 
     /**
      * @dev Allows manager to update the liquidator threshold.
-     *
+     * @param amount gov token amount (18 decimals)
      * Emits a {UpdateLiquidatorThreshold} event.
      */
-    function updateLiquidatorThreshold(
-        uint256 amount
-    ) external onlyRole(MANAGER_ROLE) {
+    function updateLiquidatorThreshold(uint256 amount) external onlyRole(MANAGER_ROLE) {
         require(amount >= 10e18, "ERR_INVALID_AMOUNT");
         emit UpdateLiquidatorThreshold(amount);
         liquidatorThreshold = amount;
@@ -718,24 +421,20 @@ contract NebulaV2 is
 
     /**
      * @dev Allows manager to update the target reward.
-     *
+     * @param amount gov token amount (18 decimals)
      * Emits a {UpdateTargetReward} event.
      */
-    function updateTargetReward(
-        uint256 amount
-    ) external onlyRole(MANAGER_ROLE) {
+    function updateTargetReward(uint256 amount) external onlyRole(MANAGER_ROLE) {
         emit UpdateTargetReward(amount);
         targetReward = amount;
     }
 
     /**
      * @dev Allows manager to update the reward interval.
-     *
+     * @param interval number of seconds, default (6 months)
      * Emits a {UpdateRewardInterval} event.
      */
-    function updateRewardInterval(
-        uint256 interval
-    ) external onlyRole(MANAGER_ROLE) {
+    function updateRewardInterval(uint256 interval) external onlyRole(MANAGER_ROLE) {
         require(interval >= 90 days, "ERR_INVALID_INTERVAL");
         emit UpdateRewardInterval(interval);
         rewardInterval = interval;
@@ -743,12 +442,10 @@ contract NebulaV2 is
 
     /**
      * @dev Allows manager to update collateral config.
-     *
+     * @param amount USDC amount for min rewardable supply, default (100_000e6)
      * Emits a {UpdateCollateralConfig} event.
      */
-    function updateRewardableSupply(
-        uint256 amount
-    ) external onlyRole(MANAGER_ROLE) {
+    function updateRewardableSupply(uint256 amount) external onlyRole(MANAGER_ROLE) {
         require(amount >= 20_000 * WAD, "ERR_INVALID_AMOUNT");
         emit UpdateRewardableSupply(amount);
         rewardableSupply = amount;
@@ -756,7 +453,14 @@ contract NebulaV2 is
 
     /**
      * @dev Allows manager to update collateral config.
-     *
+     * @param asset address
+     * @param oracle_ address
+     * @param oracleDecimals uint8
+     * @param assetDecimals uint8
+     * @param active uint8 (0 or 1)
+     * @param borrowThreshold 87% is passed in as 870
+     * @param liquidationThreshold 92% is passed in as 920
+     * @param maxSupplyLimit total asset amount limit allowed by the protocol
      * Emits a {UpdateCollateralConfig} event.
      */
     function updateCollateralConfig(
@@ -769,8 +473,9 @@ contract NebulaV2 is
         uint32 liquidationThreshold,
         uint256 maxSupplyLimit
     ) external onlyRole(MANAGER_ROLE) {
-        if (listedAsset.contains(asset) != true)
+        if (listedAsset.contains(asset) != true) {
             require(listedAsset.add(asset), "ERR_ADDING_ASSET");
+        }
 
         Asset storage item = assetInfo[asset];
 
@@ -785,60 +490,343 @@ contract NebulaV2 is
         emit UpdateCollateralConfig(asset);
     }
 
-    // The following functions are overrides required by Solidity.
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyRole(UPGRADER_ROLE) {
-        ++version;
-        emit Upgrade(msg.sender, newImplementation);
+    /**
+     * @dev Getter for the  protocol snapshot.
+     * @return ProtocolSnapshot object
+     */
+    function getProtocolSnapshot() external view returns (ProtocolSnapshot memory) {
+        uint256 utilization = getUtilization();
+        uint256 borrowRate = getBorrowRate();
+        uint256 supplyRate = getSupplyRate();
+
+        return ProtocolSnapshot(
+            utilization,
+            borrowRate,
+            supplyRate,
+            totalBorrow,
+            totalBase,
+            targetReward,
+            rewardInterval,
+            rewardableSupply,
+            baseProfitTarget,
+            liquidatorThreshold
+        );
+    }
+
+    /**
+     * @dev Getter for the current user collateral assets.
+     * @param src address
+     * @return Returns borrower collateral assets address array.
+     */
+    function getUserCollateralAssets(address src) external view returns (address[] memory) {
+        return userCollateralAssets[src];
+    }
+
+    /**
+     * @dev Getter for the individual collateral asset Info.
+     * @param asset address
+     * @return Returns Asset object.
+     */
+    function getCollateralInfo(address asset) external view returns (Asset memory) {
+        return assetInfo[asset];
+    }
+
+    /**
+     * @dev Getter for the current user collateral individual asset amount.
+     * @param src address
+     * @param asset address
+     * @return Returns amount of collateral borrower has for the asset.
+     */
+    function getCollateral(address src, address asset) external view returns (uint256) {
+        return collateral[src][asset];
+    }
+
+    /**
+     * @dev Getter for the total amount of particular asset collateral inside the protocol.
+     * @param asset address
+     * @return total amount of collateral held in this contract by asset.
+     */
+    function getTotalCollateral(address asset) external view returns (uint256) {
+        return totalCollateral[asset];
+    }
+
+    /**
+     * @dev Getter returns principal amount owed by a borrower on last transaction
+     * @param src borrower address
+     * @return borrower loan principal amount
+     */
+    function getLoanPrincipal(address src) external view returns (uint256) {
+        return loans[src];
+    }
+
+    /**
+     * @dev Getter returns all listed collateral assets.
+     * @return array of listed collateral assets
+     */
+    function getListings() external view returns (address[] memory array) {
+        array = listedAsset.values();
+    }
+
+    /**
+     * @dev Getter checks if collateral asset is listed.
+     * @param token address
+     * @return boolean value
+     */
+    function isListed(address token) external view returns (bool) {
+        return listedAsset.contains(token);
+    }
+
+    /**
+     * @dev Getter returns the total number of listed collateral assets.
+     * @return number of listed collateral assets
+     */
+    function listedAssets() external view returns (uint256) {
+        return listedAsset.length();
+    }
+
+    /**
+     * @dev Getter returns the Asset object.
+     * @param asset address
+     * @return Asset object
+     */
+    function getAssetInfo(address asset) external view returns (Asset memory) {
+        return assetInfo[asset];
+    }
+
+    /**
+     * @dev Getter calculates the health factor of a borrower.
+     * @param src borrower address
+     * @return health factor
+     */
+    function healthFactor(address src) external view returns (uint256) {
+        if (loans[src] == 0) return 0;
+        uint256 balance = getAccruedDebt(src);
+        address[] memory assets = userCollateralAssets[src];
+        uint256 len = assets.length;
+        uint256 liqLevel;
+
+        for (uint256 i = 0; i < len; ++i) {
+            uint256 amount = collateral[src][assets[i]];
+            if (amount > 0) {
+                Asset memory token = assetInfo[assets[i]];
+                uint256 price = getAssetPrice(token.oracleUSD);
+                liqLevel += (amount * price * token.liquidationThreshold * WAD) / 10 ** token.decimals / 1000
+                    / 10 ** token.oracleDecimals;
+            }
+        }
+        return (liqLevel * WAD) / balance;
+    }
+
+    /**
+     * @dev Getter returns the LP's rewardable status.
+     * @param src LPs address
+     * @return success boolean
+     */
+    function isRewardable(address src) external view returns (bool) {
+        if (liquidityAccrueTimeIndex[src] == 0) return false;
+        uint256 supply = totalSupply();
+        uint256 baseAmount = (balanceOf(src) * totalBase) / supply;
+
+        return block.timestamp - rewardInterval >= liquidityAccrueTimeIndex[src] && baseAmount >= rewardableSupply;
+    }
+
+    /**
+     * @dev Allows borrower to repay total debt.
+     *
+     * Emits a {Repay} event.
+     */
+    function repayMax() public whenNotPaused {
+        require(loans[msg.sender] > 0, "ERR_NO_EXISTING_LOAN");
+        uint256 balance = getAccruedDebt(msg.sender);
+        totalBorrow = totalBorrow - loans[msg.sender];
+        loanInterestAccrueIndex += balance - loans[msg.sender];
+        delete loanAccrueTimeIndex[msg.sender];
+        delete loans[msg.sender];
+
+        repayInternal(balance);
+    }
+
+    /**
+     * @dev Getter for the current utilization rate.
+     * @return u - current utilization
+     */
+    function getUtilization() public view returns (uint256 u) {
+        if (totalBase == 0 || totalBorrow == 0) {
+            u = 0;
+        } else {
+            u = (WAD * totalBorrow) / totalBase;
+        }
+    }
+
+    /**
+     * @dev Getter for the current supply rate.
+     * @return the current supply rate
+     */
+    function getSupplyRate() public view returns (uint256) {
+        uint256 fee;
+        uint256 supply = totalSupply();
+        uint256 target = (supply * baseProfitTarget) / WAD; //1% commission
+        uint256 total = baseContract.balanceOf(address(this)) + totalBorrow;
+        if (total >= totalBase + target) {
+            fee = target;
+        }
+
+        if (total == 0 || supply == 0) return 0;
+        return ((WAD * total) / (supply + fee)) - WAD; // r = 0.05e6;
+    }
+
+    /**
+     * @dev Getter for the current borrow rate.
+     * @return the current borrow rate
+     */
+    function getBorrowRate() public view returns (uint256) {
+        uint256 duration = 365 days;
+        uint256 defaultSupply = WAD;
+        uint256 utilization = getUtilization();
+        if (utilization == 0) return baseBorrowRate;
+        if (loans[msg.sender] > 0) {
+            duration = block.timestamp - loanAccrueTimeIndex[msg.sender];
+        }
+
+        uint256 loan = (defaultSupply * utilization) / WAD;
+        uint256 supplyRateRay = annualRateToRay(getSupplyRate());
+        uint256 supplyInterest = getInterest(defaultSupply, supplyRateRay, duration);
+        uint256 breakEven = breakEvenRate(loan, supplyInterest);
+
+        uint256 rate = breakEven + baseProfitTarget;
+        return rate > baseBorrowRate ? rate : baseBorrowRate;
+    }
+
+    /**
+     * @dev Getter returns total amount owed by a borrower
+     * @param src borrower address
+     * @return d - accrued borrower debt in USDC
+     */
+    function getAccruedDebt(address src) public view returns (uint256 d) {
+        uint256 time = block.timestamp - loanAccrueTimeIndex[src];
+        require(time > 0, "ERR_TIMESPAN");
+        uint256 rateRay = annualRateToRay(getBorrowRate());
+        d = accrueInterest(loans[src], rateRay, time);
+    }
+
+    /**
+     * @dev Getter returns true if borrowed amount reaches the collateral liquidation threshold.
+     * @param src borrower address
+     * @return success boolean
+     */
+    function isLiquidatable(address src) public view returns (bool) {
+        if (loans[src] == 0) return false;
+        uint256 balance = getAccruedDebt(src);
+        address[] memory assets = userCollateralAssets[src];
+        uint256 len = assets.length;
+        uint256 cValue;
+
+        for (uint256 i = 0; i < len; ++i) {
+            uint256 amount = collateral[src][assets[i]];
+            if (amount > 0) {
+                Asset memory token = assetInfo[assets[i]];
+                uint256 price = getAssetPrice(token.oracleUSD);
+                cValue += (amount * price * token.liquidationThreshold * WAD) / 10 ** token.decimals / 1000
+                    / 10 ** token.oracleDecimals;
+            }
+        }
+
+        return balance >= cValue;
+    }
+
+    /**
+     * @dev Getter returns the price of a collateral assets.
+     * @param oracle address
+     * @return asset price
+     */
+    function getAssetPrice(address oracle) public view returns (uint256) {
+        (, int256 answer,,,) = AggregatorV3Interface(oracle).latestRoundData();
+        return uint256(answer);
+    }
+
+    /**
+     * @dev Getter calculates the max borrowable amount based on user collateral.
+     * @param src borrower address
+     * @return value in USDC
+     */
+    function creditValue(address src) public view returns (uint256 value) {
+        address[] memory assets = userCollateralAssets[src];
+        uint256 len = assets.length;
+
+        for (uint256 i = 0; i < len; ++i) {
+            uint256 amount = collateral[src][assets[i]];
+            if (amount > 0) {
+                Asset memory token = assetInfo[assets[i]];
+                uint256 price = getAssetPrice(token.oracleUSD);
+                value += (amount * price * token.borrowThreshold * WAD) / 10 ** token.decimals / 1000
+                    / 10 ** token.oracleDecimals;
+            }
+        }
     }
 
     /**
      * @dev See {ERC20-decimals}.
+     * @inheritdoc ERC20Upgradeable
      */
-    function decimals()
-        public
-        view
-        virtual
-        override(ERC20Upgradeable, INEBULA)
-        returns (uint8)
-    {
+    function decimals() public view virtual override(ERC20Upgradeable, INEBULA) returns (uint8) {
         return IERC20Metadata(address(baseContract)).decimals();
     }
 
     /**
      * @dev See {ERC20-balanceOf}.
+     * @inheritdoc ERC20Upgradeable
      */
-    function balanceOf(
-        address src
-    )
-        public
-        view
-        virtual
-        override(ERC20Upgradeable, INEBULA)
-        returns (uint256)
-    {
+    function balanceOf(address src) public view virtual override(ERC20Upgradeable, INEBULA) returns (uint256) {
         return super.balanceOf(src);
     }
 
     /**
      * @dev See {ERC20-totalSupply}.
+     * @inheritdoc ERC20Upgradeable
      */
-    function totalSupply()
-        public
-        view
-        virtual
-        override(ERC20Upgradeable, INEBULA)
-        returns (uint256)
-    {
+    function totalSupply() public view virtual override(ERC20Upgradeable, INEBULA) returns (uint256) {
         return super.totalSupply();
     }
 
-    function _update(
-        address from,
-        address to,
-        uint256 value
-    ) internal override(ERC20Upgradeable, ERC20PausableUpgradeable) {
+    /// @inheritdoc ERC20Upgradeable
+    function _update(address from, address to, uint256 value)
+        internal
+        override(ERC20Upgradeable, ERC20PausableUpgradeable)
+    {
         super._update(from, to, value);
+    }
+
+    /**
+     * @dev internal repay function.
+     * @param amount to be repayed
+     */
+    function repayInternal(uint256 amount) internal {
+        emit Repay(msg.sender, amount);
+        require(baseContract.transferFrom(msg.sender, address(this), amount), "ERR_TRANSFER_IN_FAILED");
+    }
+
+    /**
+     * @dev Calculates if reward is due to lenders on exchange operation
+     * @param amount to be exchanged
+     */
+    function rewardInternal(uint256 amount) internal {
+        bool rewardable =
+            block.timestamp - rewardInterval >= liquidityAccrueTimeIndex[msg.sender] && amount >= rewardableSupply;
+
+        if (rewardable) {
+            uint256 duration = block.timestamp - liquidityAccrueTimeIndex[msg.sender];
+            uint256 reward = (targetReward * duration) / rewardInterval;
+            uint256 maxReward = ecosystemContract.maxReward();
+            uint256 target = reward > maxReward ? maxReward : reward;
+            delete liquidityAccrueTimeIndex[msg.sender];
+            emit Reward(msg.sender, target);
+            ecosystemContract.reward(msg.sender, target);
+        }
+    }
+
+    /// @inheritdoc UUPSUpgradeable
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {
+        ++version;
+        emit Upgrade(msg.sender, newImplementation);
     }
 }

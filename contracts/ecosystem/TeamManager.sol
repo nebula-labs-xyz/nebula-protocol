@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 /**
  * @title Yoda Ecosystem Team Manager
  * @notice Creates team vesting contracts
  * @author Nebula Labs Inc
  * @custom:security-contact security@nebula-labs.xyz
  */
+
 import {IYODA} from "../interfaces/IYODA.sol";
 import {ITEAMMANAGER} from "../interfaces/ITeamManager.sol";
 import {TeamVesting} from "./TeamVesting.sol";
@@ -15,22 +16,26 @@ import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Pau
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 /// @custom:oz-upgrades
-contract TeamManager is
-    ITEAMMANAGER,
-    Initializable,
-    PausableUpgradeable,
-    AccessControlUpgradeable,
-    UUPSUpgradeable
-{
-    bytes32 private constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    bytes32 private constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
-    bytes32 private constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    IYODA private ecosystemToken;
+contract TeamManager is ITEAMMANAGER, Initializable, PausableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
+    /// @dev AccessControl Pauser Role
+    bytes32 internal constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    /// @dev AccessControl Manager Role
+    bytes32 internal constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    /// @dev AccessControl Upgrader Role
+    bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    /// @dev governance token instance
+    IYODA internal ecosystemToken;
+    /// @dev amount of ecosystem tokens in the contract
     uint256 public supply;
+    /// @dev amount of tokens allocated so far
     uint256 public totalAllocation;
+    /// @dev token allocations to team members
     mapping(address => uint256) public allocations;
+    /// @dev vesting contract addresses for team members
     mapping(address => address) public vestingContracts;
-    address private timelock;
+    /// @dev timelock address
+    address public timelock;
+    /// @dev number of UUPS upgrades
     uint8 public version;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -38,11 +43,21 @@ contract TeamManager is
         _disableInitializers();
     }
 
-    function initialize(
-        address token,
-        address timelock_,
-        address guardian
-    ) external initializer {
+    /**
+     * @notice solidity receive function
+     * @dev reverts on receive ETH
+     */
+    receive() external payable {
+        if (msg.value > 0) revert CustomError("NO_RECEIVE");
+    }
+
+    /**
+     * @dev Initializes the this contract
+     * @param token ecosystem token address
+     * @param timelock_ timelock address
+     * @param guardian guardian address
+     */
+    function initialize(address token, address timelock_, address guardian) external initializer {
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
@@ -55,17 +70,6 @@ contract TeamManager is
         ecosystemToken = IYODA(payable(token));
         supply = (ecosystemToken.initialSupply() * 18) / 100;
         ++version;
-    }
-
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyRole(UPGRADER_ROLE) {
-        ++version;
-        emit Upgrade(msg.sender, newImplementation);
-    }
-
-    receive() external payable {
-        if (msg.value > 0) revert CustomError("ERR_NO_RECEIVE");
     }
 
     /**
@@ -84,13 +88,19 @@ contract TeamManager is
 
     /**
      * @dev Create and fund a vesting contract for a new team member
+     * @param beneficiary beneficiary address
+     * @param amount token amount
+     * @return success boolean
      */
-    function addTeamMember(
-        address beneficiary,
-        uint256 amount
-    ) external whenNotPaused onlyRole(MANAGER_ROLE) returns (bool success) {
-        if (totalAllocation + amount > supply)
+    function addTeamMember(address beneficiary, uint256 amount)
+        external
+        whenNotPaused
+        onlyRole(MANAGER_ROLE)
+        returns (bool success)
+    {
+        if (totalAllocation + amount > supply) {
             revert CustomError("SUPPLY_LIMIT");
+        }
         totalAllocation += amount;
 
         TeamVesting vestingContract = new TeamVesting(
@@ -106,6 +116,12 @@ contract TeamManager is
 
         emit AddTeamMember(beneficiary, address(vestingContract), amount);
         success = ecosystemToken.transfer(address(vestingContract), amount);
-        if (!success) revert CustomError("ERR_ALLOCATION_TRANSFER_FAILED");
+        if (!success) revert CustomError("ALLOCATION_TRANSFER_FAILED");
+    }
+
+    /// @inheritdoc UUPSUpgradeable
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {
+        ++version;
+        emit Upgrade(msg.sender, newImplementation);
     }
 }

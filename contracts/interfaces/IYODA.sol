@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
+
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/interfaces/IERC20Metadata.sol";
 
@@ -42,6 +43,11 @@ interface IYODA is IERC20, IERC20Metadata {
     function burnFrom(address account, uint256 value) external;
 
     /**
+     * @dev Facilitates Bridge BnM functionality.
+     */
+    function bridgeMint(address to, uint256 amount) external;
+
+    /**
      * @dev Getter for the Initial supply.
      */
     function initialSupply() external view returns (uint256);
@@ -55,9 +61,4 @@ interface IYODA is IERC20, IERC20Metadata {
      * @dev Getter for the UUPS version, incremented with every upgrade.
      */
     function version() external view returns (uint8);
-
-    /**
-     * @dev Facilitates Bridge BnM functionality.
-     */
-    function bridgeMint(address to, uint256 amount) external;
 }

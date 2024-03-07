@@ -20,41 +20,25 @@ interface IERC4626 is IERC20 {
     /**
      * @dev `caller` has exchanged `assets` for `shares`, and transferred those `shares` to `owner`.
      */
-    event Deposit(
-        address indexed caller,
-        address indexed owner,
-        uint256 assets,
-        uint256 shares
-    );
+    event Deposit(address indexed caller, address indexed owner, uint256 assets, uint256 shares);
 
     /**
      * @dev `caller` has exchanged `shares`, owned by `owner`, for `assets`,
      *      and transferred those `assets` to `receiver`.
      */
     event Withdraw(
-        address indexed caller,
-        address indexed receiver,
-        address indexed owner,
-        uint256 assets,
-        uint256 shares
+        address indexed caller, address indexed receiver, address indexed owner, uint256 assets, uint256 shares
     );
 
     /**
      * @dev Mints `shares` Vault shares to `receiver` by depositing exactly `amount` of underlying tokens.
      */
-    function deposit(
-        uint256 assets,
-        address receiver
-    ) external returns (uint256 shares);
+    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 
     /**
      * @dev Burns exactly `shares` from `owner` and sends `assets` of underlying tokens to `receiver`.
      */
-    function redeem(
-        uint256 shares,
-        address receiver,
-        address owner
-    ) external returns (uint256 assets);
+    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
 
     /**
      * @dev The address of the underlying token that the Vault uses for accounting, depositing, and withdrawing.
@@ -70,15 +54,11 @@ interface IERC4626 is IERC20 {
      * @dev The amount of `assets` that the Vault would exchange for the amount
      *      of `shares` provided, in an ideal scenario where all the conditions are met.
      */
-    function convertToAssets(
-        uint256 shares
-    ) external view returns (uint256 assets);
+    function convertToAssets(uint256 shares) external view returns (uint256 assets);
 
     /**
      * @dev The amount of `shares` that the Vault would exchange for the amount
      *      of `assets` provided, in an ideal scenario where all the conditions are met.
      */
-    function convertToShares(
-        uint256 assets
-    ) external view returns (uint256 shares);
+    function convertToShares(uint256 assets) external view returns (uint256 shares);
 }

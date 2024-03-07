@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 /**
  * @title Yoda BnM-Bridge Contract
  * @notice Creates BnM-Bridge
@@ -16,25 +16,31 @@ import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Pau
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 /// @custom:oz-upgrades
-contract Bridge is
-    IBRIDGE,
-    Initializable,
-    PausableUpgradeable,
-    AccessControlUpgradeable,
-    UUPSUpgradeable
-{
+contract Bridge is IBRIDGE, Initializable, PausableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
+    /// @dev EnumerableSet of supported tokens
+
     EnumerableSet.AddressSet internal tokenSet;
+    /// @dev EnumerableSet of supported chains
     EnumerableSet.UintSet internal chainSet;
-    bytes32 private constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    bytes32 private constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
-    bytes32 private constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    /// @dev AccessControl Pauser Role
+    bytes32 internal constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    /// @dev AccessControl Manager Role
+    bytes32 internal constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    /// @dev AccessControl Upgrader Role
+    bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    /// @dev stores last transaction ID
     uint256 public transactionId;
+    /// @dev chain transcation count, by chainId
     mapping(uint256 => uint256) public chainCount;
+    /// @dev Chain object by chainId mapping
     mapping(uint256 => Chain) public chains;
+    /// @dev supported tokens mapping
     mapping(address => Token) public tokens;
+    /// @dev Transaction by ID mapping
     mapping(uint256 => Transaction) private transactions;
+    /// @dev number of UUPS upgrades
     uint8 public version;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -42,10 +48,12 @@ contract Bridge is
         _disableInitializers();
     }
 
-    function initialize(
-        address guardian,
-        address timelock
-    ) external initializer {
+    /**
+     * @dev Initializes the UUPS contract
+     * @param guardian admin address
+     * @param timelock address
+     */
+    function initialize(address guardian, address timelock) external initializer {
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
@@ -56,13 +64,16 @@ contract Bridge is
         ++version;
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyRole(UPGRADER_ROLE) {
+    /// @inheritdoc UUPSUpgradeable
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {
         ++version;
         emit Upgrade(msg.sender, newImplementation);
     }
 
+    /**
+     * @notice solidity receive function
+     * @dev reverts on receive ETH
+     */
     receive() external payable {
         if (msg.value > 0) revert("ERR_NO_RECEIVE");
     }
@@ -83,11 +94,10 @@ contract Bridge is
 
     /**
      * @dev Add supported chain.
+     * @param name chain name
+     * @param chainId chain ID
      */
-    function addChain(
-        string calldata name,
-        uint256 chainId
-    ) external whenNotPaused onlyRole(MANAGER_ROLE) {
+    function addChain(string calldata name, uint256 chainId) external whenNotPaused onlyRole(MANAGER_ROLE) {
         require(chainSet.contains(chainId) != true, "ERR_CHAIN_EXISTS");
 
         Chain storage item = chains[chainId];
@@ -101,10 +111,9 @@ contract Bridge is
 
     /**
      * @dev Remove supported chain.
+     * @param chainId chain ID
      */
-    function removeChain(
-        uint256 chainId
-    ) external whenNotPaused onlyRole(MANAGER_ROLE) {
+    function removeChain(uint256 chainId) external whenNotPaused onlyRole(MANAGER_ROLE) {
         require(chainSet.contains(chainId), "ERR_NOT_LISTED");
         delete chains[chainId];
         require(chainSet.remove(chainId), "ERR_REMOVING_CHAIN");
@@ -113,6 +122,8 @@ contract Bridge is
 
     /**
      * @dev Getter for the Token object.
+     * @param token address
+     * @return Token info object
      */
     function getToken(address token) external view returns (Token memory) {
         return tokens[token];
@@ -120,6 +131,7 @@ contract Bridge is
 
     /**
      * @dev Getter for the supported token listings.
+     * @return array of listed token addresses
      */
     function getListings() external view returns (address[] memory array) {
         array = tokenSet.values();
@@ -127,6 +139,8 @@ contract Bridge is
 
     /**
      * @dev Getter returns true if token is listed.
+     * @param token address
+     * @return boolean value
      */
     function isListed(address token) external view returns (bool) {
         return tokenSet.contains(token);
@@ -134,6 +148,7 @@ contract Bridge is
 
     /**
      * @dev Getter returns listed token count.
+     * @return number of listed tokens
      */
     function getListedCount() external view returns (uint256) {
         return tokenSet.length();
@@ -141,15 +156,17 @@ contract Bridge is
 
     /**
      * @dev Getter returns chain transaction count.
+     * @param chainId chain ID
+     * @return number of transaction for this chain
      */
-    function getChainTransactionCount(
-        uint256 chainId
-    ) external view returns (uint256) {
+    function getChainTransactionCount(uint256 chainId) external view returns (uint256) {
         return chainCount[chainId];
     }
 
     /**
      * @dev Getter returns Chain object.
+     * @param chainId chain ID
+     * @return Chain struct (IBRIDGE)
      */
     function getChain(uint256 chainId) external view returns (Chain memory) {
         return chains[chainId];
@@ -157,6 +174,8 @@ contract Bridge is
 
     /**
      * @dev Getter returns Token object.
+     * @param token address
+     * @return Token struct (IBRIDGE)
      */
     function getTokenInfo(address token) external view returns (Token memory) {
         return tokens[token];
@@ -164,21 +183,24 @@ contract Bridge is
 
     /**
      * @dev Getter returns transaction object.
+     * @param tranId address
+     * @return Transaction struct (IBRIDGE)
      */
-    function getTransaction(
-        uint256 tranId
-    ) external view returns (Transaction memory) {
+    function getTransaction(uint256 tranId) external view returns (Transaction memory) {
         return transactions[tranId];
     }
 
     /**
      * @dev Adds token to listed tokens.
+     * @param name token name
+     * @param symbol token symbol
+     * @param token address
      */
-    function listToken(
-        string calldata name,
-        string calldata symbol,
-        address token
-    ) external whenNotPaused onlyRole(MANAGER_ROLE) {
+    function listToken(string calldata name, string calldata symbol, address token)
+        external
+        whenNotPaused
+        onlyRole(MANAGER_ROLE)
+    {
         require(tokenSet.contains(token) != true, "ERR_TOKEN_EXISTS");
 
         Token storage item = tokens[token];
@@ -193,10 +215,9 @@ contract Bridge is
 
     /**
      * @dev Removes token from listed tokens.
+     * @param token address
      */
-    function removeToken(
-        address token
-    ) external whenNotPaused onlyRole(MANAGER_ROLE) {
+    function removeToken(address token) external whenNotPaused onlyRole(MANAGER_ROLE) {
         require(tokenSet.contains(token), "ERR_NOT_LISTED");
         delete tokens[token];
         require(tokenSet.remove(token), "ERR_TOKEN_REMOVE FAILED");
@@ -205,37 +226,28 @@ contract Bridge is
 
     /**
      * @dev Bridge function BnM.
+     * @param token address
+     * @param to address
+     * @param amount to mint
+     * @param destChainId chianID where to mint
+     * @return transactionId
      */
-    function bridgeTokens(
-        address token,
-        address to,
-        uint256 amount,
-        uint256 destChainId
-    ) external whenNotPaused returns (uint256) {
+    function bridgeTokens(address token, address to, uint256 amount, uint256 destChainId)
+        external
+        whenNotPaused
+        returns (uint256)
+    {
         require(tokenSet.contains(token) == true, "ERR_UNLISTED_TOKEN");
         require(chainSet.contains(destChainId) == true, "ERR_UNKNOWN_CHAIN");
         IERC20Bridgable tokenContract = IERC20Bridgable(payable(token));
-        require(
-            tokenContract.balanceOf(msg.sender) >= amount,
-            "ERR_INSUFFICIENT_BALANCE"
-        );
+        require(tokenContract.balanceOf(msg.sender) >= amount, "ERR_INSUFFICIENT_BALANCE");
         transactionId++;
         chainCount[destChainId]++;
 
-        transactions[transactionId] = Transaction(
-            msg.sender,
-            to,
-            token,
-            amount,
-            block.timestamp,
-            destChainId
-        );
+        transactions[transactionId] = Transaction(msg.sender, to, token, amount, block.timestamp, destChainId);
 
         emit Bridged(transactionId, msg.sender, to, token, amount, destChainId);
-        require(
-            tokenContract.transferFrom(msg.sender, address(this), amount),
-            "ERR_TRANSFER_FAILED"
-        );
+        require(tokenContract.transferFrom(msg.sender, address(this), amount), "ERR_TRANSFER_FAILED");
         tokenContract.burn(amount);
 
         return transactionId;

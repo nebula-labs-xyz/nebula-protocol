@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 /**
  * @title Yoda Governor
  * @notice Standard OZUpgradeable governor, small modification with UUPS
@@ -11,11 +11,20 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {GovernorUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
-import {GovernorSettingsUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
-import {GovernorCountingSimpleUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
-import {GovernorVotesUpgradeable, IVotes} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorVotesUpgradeable.sol";
-import {GovernorVotesQuorumFractionUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
-import {GovernorTimelockControlUpgradeable, TimelockControllerUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
+import {GovernorSettingsUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
+import {GovernorCountingSimpleUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
+import {
+    GovernorVotesUpgradeable,
+    IVotes
+} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorVotesUpgradeable.sol";
+import {GovernorVotesQuorumFractionUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
+import {
+    GovernorTimelockControlUpgradeable,
+    TimelockControllerUpgradeable
+} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
 
 /// @custom:oz-upgrades
 contract YodaGovernor is
@@ -29,8 +38,14 @@ contract YodaGovernor is
     OwnableUpgradeable,
     UUPSUpgradeable
 {
+    /// @dev UUPS version tracker
     uint8 public uupsVersion;
 
+    /**
+     * @dev event emitted on UUPS upgrade
+     * @param src upgrade sender address
+     * @param implementation new implementation address
+     */
     event Upgrade(address indexed src, address indexed implementation);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -38,11 +53,16 @@ contract YodaGovernor is
         _disableInitializers();
     }
 
-    function initialize(
-        IVotes _token,
-        TimelockControllerUpgradeable _timelock,
-        address initialOwner
-    ) public initializer {
+    /**
+     * @dev Initializes the UUPS contract
+     * @param _token IVotes token instance
+     * @param _timelock timelock instance
+     * @param initialOwner owner address
+     */
+    function initialize(IVotes _token, TimelockControllerUpgradeable _timelock, address initialOwner)
+        external
+        initializer
+    {
         __Governor_init("Yoda Governor");
         __GovernorSettings_init(7200, /* 1 day */ 50400, /* 1 week */ 20000e18);
         __GovernorCountingSimple_init();
@@ -54,36 +74,19 @@ contract YodaGovernor is
         ++uupsVersion;
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {
-        ++uupsVersion;
-        emit Upgrade(msg.sender, newImplementation);
-    }
-
     // The following functions are overrides required by Solidity.
-
-    function votingDelay()
-        public
-        view
-        override(GovernorUpgradeable, GovernorSettingsUpgradeable)
-        returns (uint256)
-    {
+    /// @inheritdoc GovernorUpgradeable
+    function votingDelay() public view override(GovernorUpgradeable, GovernorSettingsUpgradeable) returns (uint256) {
         return super.votingDelay();
     }
 
-    function votingPeriod()
-        public
-        view
-        override(GovernorUpgradeable, GovernorSettingsUpgradeable)
-        returns (uint256)
-    {
+    /// @inheritdoc GovernorUpgradeable
+    function votingPeriod() public view override(GovernorUpgradeable, GovernorSettingsUpgradeable) returns (uint256) {
         return super.votingPeriod();
     }
 
-    function quorum(
-        uint256 blockNumber
-    )
+    /// @inheritdoc GovernorUpgradeable
+    function quorum(uint256 blockNumber)
         public
         view
         override(GovernorUpgradeable, GovernorVotesQuorumFractionUpgradeable)
@@ -92,9 +95,8 @@ contract YodaGovernor is
         return super.quorum(blockNumber);
     }
 
-    function state(
-        uint256 proposalId
-    )
+    /// @inheritdoc GovernorUpgradeable
+    function state(uint256 proposalId)
         public
         view
         override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
@@ -103,9 +105,8 @@ contract YodaGovernor is
         return super.state(proposalId);
     }
 
-    function proposalNeedsQueuing(
-        uint256 proposalId
-    )
+    /// @inheritdoc GovernorUpgradeable
+    function proposalNeedsQueuing(uint256 proposalId)
         public
         view
         override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
@@ -114,6 +115,7 @@ contract YodaGovernor is
         return super.proposalNeedsQueuing(proposalId);
     }
 
+    /// @inheritdoc GovernorUpgradeable
     function proposalThreshold()
         public
         view
@@ -123,59 +125,45 @@ contract YodaGovernor is
         return super.proposalThreshold();
     }
 
+    /// @inheritdoc UUPSUpgradeable
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {
+        ++uupsVersion;
+        emit Upgrade(msg.sender, newImplementation);
+    }
+
+    /// @inheritdoc GovernorUpgradeable
     function _queueOperations(
         uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    )
-        internal
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
-        returns (uint48)
-    {
-        return
-            super._queueOperations(
-                proposalId,
-                targets,
-                values,
-                calldatas,
-                descriptionHash
-            );
+    ) internal override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) returns (uint48) {
+        return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
     }
 
+    /// @inheritdoc GovernorUpgradeable
     function _executeOperations(
         uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    )
-        internal
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
-    {
-        super._executeOperations(
-            proposalId,
-            targets,
-            values,
-            calldatas,
-            descriptionHash
-        );
+    ) internal override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) {
+        super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
     }
 
+    /// @inheritdoc GovernorUpgradeable
     function _cancel(
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    )
-        internal
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
-        returns (uint256)
-    {
+    ) internal override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) returns (uint256) {
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 
+    /// @inheritdoc GovernorUpgradeable
     function _executor()
         internal
         view

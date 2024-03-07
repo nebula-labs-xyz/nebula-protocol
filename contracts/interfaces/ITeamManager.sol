@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
 interface ITEAMMANAGER {
     event Upgrade(address indexed src, address indexed implementation);
-    event AddTeamMember(
-        address indexed account,
-        address indexed vesting,
-        uint256 amount
-    );
+    event AddTeamMember(address indexed account, address indexed vesting, uint256 amount);
 
     error CustomError(string msg);
 
@@ -51,8 +47,5 @@ interface ITEAMMANAGER {
     /**
      * @dev Create new vesting contract for a team member.
      */
-    function addTeamMember(
-        address beneficiary,
-        uint256 amount
-    ) external returns (bool);
+    function addTeamMember(address beneficiary, uint256 amount) external returns (bool);
 }

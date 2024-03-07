@@ -40,7 +40,7 @@
     "@openzeppelin/upgrades-core": "^1.32.3",
     "ds-test": "github:dapphub/ds-test#e282159",
     "forge-std": "github:foundry-rs/forge-std#4513bc2",
-    "husky": ">=8",
+    "husky": "^8.0.0",
     "lint-staged": ">=10",
     "solhint": "github:solhint-community/solhint-community#v4.0.0-rc01",
     "sort-package-json": "1.53.1"

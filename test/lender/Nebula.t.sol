@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
 import "../BasicDeploy.sol";
 import {USDC} from "../../contracts/mock/USDC.sol";
@@ -16,14 +16,9 @@ contract NebulaTest is BasicDeploy {
         assertEq(tokenInstance.totalSupply(), 0);
         // this is the TGE
         vm.prank(guardian);
-        tokenInstance.initializeTGE(
-            address(ecoInstance),
-            address(treasuryInstance)
-        );
+        tokenInstance.initializeTGE(address(ecoInstance), address(treasuryInstance));
         uint256 ecoBal = tokenInstance.balanceOf(address(ecoInstance));
-        uint256 treasuryBal = tokenInstance.balanceOf(
-            address(treasuryInstance)
-        );
+        uint256 treasuryBal = tokenInstance.balanceOf(address(treasuryInstance));
 
         assertEq(ecoBal, 22_000_000 ether);
         assertEq(treasuryBal, 28_000_000 ether);
@@ -43,9 +38,7 @@ contract NebulaTest is BasicDeploy {
                 guardian
             )
         );
-        address payable proxy = payable(
-            Upgrades.deployUUPSProxy("Nebula.sol", data)
-        );
+        address payable proxy = payable(Upgrades.deployUUPSProxy("Nebula.sol", data));
         nebulaInstance = Nebula(proxy);
         address implementation = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(nebulaInstance) == implementation);
@@ -56,15 +49,11 @@ contract NebulaTest is BasicDeploy {
 
     function test_Revert_Receive() public returns (bool success) {
         vm.expectRevert(); // contract does not receive ether
-        (success, ) = payable(address(nebulaInstance)).call{value: 100 ether}(
-            ""
-        );
+        (success,) = payable(address(nebulaInstance)).call{value: 100 ether}("");
     }
 
     function test_Revert_Initialization() public {
-        bytes memory expError = abi.encodeWithSignature(
-            "InvalidInitialization()"
-        );
+        bytes memory expError = abi.encodeWithSignature("InvalidInitialization()");
         vm.expectRevert(expError); // contract already initialized
         nebulaInstance.initialize(
             address(usdcInstance),
@@ -89,11 +78,8 @@ contract NebulaTest is BasicDeploy {
     function test_Revert_Pause_Branch1() public {
         assertEq(nebulaInstance.paused(), false);
 
-        bytes memory expError = abi.encodeWithSignature(
-            "AccessControlUnauthorizedAccount(address,bytes32)",
-            managerAdmin,
-            PAUSER_ROLE
-        );
+        bytes memory expError =
+            abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", managerAdmin, PAUSER_ROLE);
         vm.prank(managerAdmin);
         vm.expectRevert(expError);
         nebulaInstance.pause();
@@ -103,19 +89,10 @@ contract NebulaTest is BasicDeploy {
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == false);
         vm.prank(address(timelockInstance));
         nebulaInstance.updateCollateralConfig(
-            address(wethInstance),
-            address(oracleInstance),
-            8,
-            18,
-            1,
-            870,
-            920,
-            10_000 ether
+            address(wethInstance), address(oracleInstance), 8, 18, 1, 870, 920, 10_000 ether
         );
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == true);
-        INEBULA.Asset memory item = nebulaInstance.getCollateralInfo(
-            address(wethInstance)
-        );
+        INEBULA.Asset memory item = nebulaInstance.getCollateralInfo(address(wethInstance));
         assertTrue(item.oracleUSD == address(oracleInstance));
         assertTrue(item.oracleDecimals == 8);
         assertTrue(item.decimals == 18);
@@ -127,22 +104,12 @@ contract NebulaTest is BasicDeploy {
 
     function test_Revert_UpdateCollateralConfig_Branch1() public {
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == false);
-        bytes memory expError = abi.encodeWithSignature(
-            "AccessControlUnauthorizedAccount(address,bytes32)",
-            managerAdmin,
-            MANAGER_ROLE
-        );
+        bytes memory expError =
+            abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", managerAdmin, MANAGER_ROLE);
         vm.prank(managerAdmin);
         vm.expectRevert(expError); // access control
         nebulaInstance.updateCollateralConfig(
-            address(wethInstance),
-            address(oracleInstance),
-            8,
-            18,
-            1,
-            870,
-            920,
-            10_000 ether
+            address(wethInstance), address(oracleInstance), 8, 18, 1, 870, 920, 10_000 ether
         );
     }
 
@@ -165,9 +132,7 @@ contract NebulaTest is BasicDeploy {
         vm.deal(bob, 10 ether);
 
         vm.startPrank(bob);
-        (bool success, ) = payable(address(wethInstance)).call{value: 10 ether}(
-            ""
-        );
+        (bool success,) = payable(address(wethInstance)).call{value: 10 ether}("");
         require(success, "ERR_ETH_TRANSFER_FAILED");
         assertEq(wethInstance.balanceOf(bob), 10 ether);
         wethInstance.approve(address(nebulaInstance), 10 ether);
@@ -180,9 +145,7 @@ contract NebulaTest is BasicDeploy {
     function test_Revert_SupplyCollateral_Branch2() public {
         vm.deal(bob, 10 ether);
         vm.startPrank(bob);
-        (bool success, ) = payable(address(wethInstance)).call{value: 10 ether}(
-            ""
-        );
+        (bool success,) = payable(address(wethInstance)).call{value: 10 ether}("");
         require(success, "ERR_ETH_TRANSFER_FAILED");
         assertEq(wethInstance.balanceOf(bob), 10 ether);
         wethInstance.approve(address(nebulaInstance), 10 ether);
@@ -208,9 +171,7 @@ contract NebulaTest is BasicDeploy {
 
         vm.deal(bob, 10 ether);
         vm.startPrank(bob);
-        (bool success, ) = payable(address(wethInstance)).call{value: 10 ether}(
-            ""
-        );
+        (bool success,) = payable(address(wethInstance)).call{value: 10 ether}("");
         require(success, "ERR_ETH_TRANSFER_FAILED");
         assertEq(wethInstance.balanceOf(bob), 10 ether);
         wethInstance.approve(address(nebulaInstance), 10 ether);
@@ -223,22 +184,13 @@ contract NebulaTest is BasicDeploy {
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == false);
         vm.prank(address(timelockInstance));
         nebulaInstance.updateCollateralConfig(
-            address(wethInstance),
-            address(oracleInstance),
-            8,
-            18,
-            1,
-            870,
-            920,
-            10_000 ether
+            address(wethInstance), address(oracleInstance), 8, 18, 1, 870, 920, 10_000 ether
         );
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == true);
 
         vm.deal(bob, 10_001 ether);
         vm.startPrank(bob);
-        (bool success, ) = payable(address(wethInstance)).call{
-            value: 10_001 ether
-        }("");
+        (bool success,) = payable(address(wethInstance)).call{value: 10_001 ether}("");
         require(success, "ERR_ETH_TRANSFER_FAILED");
         assertEq(wethInstance.balanceOf(bob), 10_001 ether);
         wethInstance.approve(address(nebulaInstance), 10_001 ether);
@@ -251,22 +203,13 @@ contract NebulaTest is BasicDeploy {
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == false);
         vm.prank(address(timelockInstance));
         nebulaInstance.updateCollateralConfig(
-            address(wethInstance),
-            address(oracleInstance),
-            8,
-            18,
-            1,
-            870,
-            920,
-            10_000 ether
+            address(wethInstance), address(oracleInstance), 8, 18, 1, 870, 920, 10_000 ether
         );
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == true);
 
         vm.deal(bob, 1000 ether);
         vm.startPrank(bob);
-        (bool success, ) = payable(address(wethInstance)).call{
-            value: 1000 ether
-        }("");
+        (bool success,) = payable(address(wethInstance)).call{value: 1000 ether}("");
         require(success, "ERR_ETH_TRANSFER_FAILED");
         assertEq(wethInstance.balanceOf(bob), 1000 ether);
         wethInstance.approve(address(nebulaInstance), 1001 ether);
@@ -279,70 +222,40 @@ contract NebulaTest is BasicDeploy {
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == false);
         vm.prank(address(timelockInstance));
         nebulaInstance.updateCollateralConfig(
-            address(wethInstance),
-            address(oracleInstance),
-            8,
-            18,
-            1,
-            870,
-            920,
-            10_000 ether
+            address(wethInstance), address(oracleInstance), 8, 18, 1, 870, 920, 10_000 ether
         );
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == true);
 
         vm.deal(bob, 10 ether);
         vm.startPrank(bob);
-        (bool success, ) = payable(address(wethInstance)).call{value: 10 ether}(
-            ""
-        );
+        (bool success,) = payable(address(wethInstance)).call{value: 10 ether}("");
         require(success, "ERR_ETH_TRANSFER_FAILED");
         assertEq(wethInstance.balanceOf(bob), 10 ether);
         wethInstance.approve(address(nebulaInstance), 10 ether);
         nebulaInstance.supplyCollateral(address(wethInstance), 10 ether);
         vm.stopPrank();
-        assertEq(
-            nebulaInstance.getCollateral(bob, address(wethInstance)),
-            10 ether
-        );
-        assertEq(
-            nebulaInstance.getTotalCollateral(address(wethInstance)),
-            10 ether
-        );
+        assertEq(nebulaInstance.getCollateral(bob, address(wethInstance)), 10 ether);
+        assertEq(nebulaInstance.getTotalCollateral(address(wethInstance)), 10 ether);
     }
 
     function test_WithdrawCollateral() public {
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == false);
         vm.prank(address(timelockInstance));
         nebulaInstance.updateCollateralConfig(
-            address(wethInstance),
-            address(oracleInstance),
-            8,
-            18,
-            1,
-            870,
-            920,
-            10_000 ether
+            address(wethInstance), address(oracleInstance), 8, 18, 1, 870, 920, 10_000 ether
         );
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == true);
 
         vm.deal(bob, 10 ether);
         vm.startPrank(bob);
-        (bool success, ) = payable(address(wethInstance)).call{value: 10 ether}(
-            ""
-        );
+        (bool success,) = payable(address(wethInstance)).call{value: 10 ether}("");
         require(success, "ERR_ETH_TRANSFER_FAILED");
         assertEq(wethInstance.balanceOf(bob), 10 ether);
         wethInstance.approve(address(nebulaInstance), 10 ether);
         nebulaInstance.supplyCollateral(address(wethInstance), 10 ether);
 
-        assertEq(
-            nebulaInstance.getCollateral(bob, address(wethInstance)),
-            10 ether
-        );
-        assertEq(
-            nebulaInstance.getTotalCollateral(address(wethInstance)),
-            10 ether
-        );
+        assertEq(nebulaInstance.getCollateral(bob, address(wethInstance)), 10 ether);
+        assertEq(nebulaInstance.getTotalCollateral(address(wethInstance)), 10 ether);
 
         nebulaInstance.withdrawCollateral(address(wethInstance), 10 ether);
         vm.stopPrank();
@@ -377,35 +290,20 @@ contract NebulaTest is BasicDeploy {
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == false);
         vm.prank(address(timelockInstance));
         nebulaInstance.updateCollateralConfig(
-            address(wethInstance),
-            address(oracleInstance),
-            8,
-            18,
-            1,
-            870,
-            920,
-            10_000 ether
+            address(wethInstance), address(oracleInstance), 8, 18, 1, 870, 920, 10_000 ether
         );
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == true);
 
         vm.deal(bob, 10 ether);
         vm.startPrank(bob);
-        (bool success, ) = payable(address(wethInstance)).call{value: 10 ether}(
-            ""
-        );
+        (bool success,) = payable(address(wethInstance)).call{value: 10 ether}("");
         require(success, "ERR_ETH_TRANSFER_FAILED");
         assertEq(wethInstance.balanceOf(bob), 10 ether);
         wethInstance.approve(address(nebulaInstance), 10 ether);
         nebulaInstance.supplyCollateral(address(wethInstance), 10 ether);
 
-        assertEq(
-            nebulaInstance.getCollateral(bob, address(wethInstance)),
-            10 ether
-        );
-        assertEq(
-            nebulaInstance.getTotalCollateral(address(wethInstance)),
-            10 ether
-        );
+        assertEq(nebulaInstance.getCollateral(bob, address(wethInstance)), 10 ether);
+        assertEq(nebulaInstance.getTotalCollateral(address(wethInstance)), 10 ether);
         nebulaInstance.borrow(10_000e6);
         vm.expectRevert("ERR_TIMESPAN"); //can't borrow twice on the same block
         nebulaInstance.borrow(10_000e6);
@@ -425,35 +323,20 @@ contract NebulaTest is BasicDeploy {
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == false);
         vm.prank(address(timelockInstance));
         nebulaInstance.updateCollateralConfig(
-            address(wethInstance),
-            address(oracleInstance),
-            8,
-            18,
-            1,
-            870,
-            920,
-            10_000 ether
+            address(wethInstance), address(oracleInstance), 8, 18, 1, 870, 920, 10_000 ether
         );
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == true);
 
         vm.deal(bob, 10 ether);
         vm.startPrank(bob);
-        (bool success, ) = payable(address(wethInstance)).call{value: 10 ether}(
-            ""
-        );
+        (bool success,) = payable(address(wethInstance)).call{value: 10 ether}("");
         require(success, "ERR_ETH_TRANSFER_FAILED");
         assertEq(wethInstance.balanceOf(bob), 10 ether);
         wethInstance.approve(address(nebulaInstance), 10 ether);
         nebulaInstance.supplyCollateral(address(wethInstance), 10 ether);
 
-        assertEq(
-            nebulaInstance.getCollateral(bob, address(wethInstance)),
-            10 ether
-        );
-        assertEq(
-            nebulaInstance.getTotalCollateral(address(wethInstance)),
-            10 ether
-        );
+        assertEq(nebulaInstance.getCollateral(bob, address(wethInstance)), 10 ether);
+        assertEq(nebulaInstance.getTotalCollateral(address(wethInstance)), 10 ether);
 
         vm.expectEmit();
         emit Borrow(bob, 10_000e6);
@@ -467,35 +350,20 @@ contract NebulaTest is BasicDeploy {
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == false);
         vm.prank(address(timelockInstance));
         nebulaInstance.updateCollateralConfig(
-            address(wethInstance),
-            address(oracleInstance),
-            8,
-            18,
-            1,
-            870,
-            920,
-            10_000 ether
+            address(wethInstance), address(oracleInstance), 8, 18, 1, 870, 920, 10_000 ether
         );
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == true);
 
         vm.deal(bob, 10 ether);
         vm.startPrank(bob);
-        (bool success, ) = payable(address(wethInstance)).call{value: 10 ether}(
-            ""
-        );
+        (bool success,) = payable(address(wethInstance)).call{value: 10 ether}("");
         require(success, "ERR_ETH_TRANSFER_FAILED");
         assertEq(wethInstance.balanceOf(bob), 10 ether);
         wethInstance.approve(address(nebulaInstance), 10 ether);
         nebulaInstance.supplyCollateral(address(wethInstance), 10 ether);
 
-        assertEq(
-            nebulaInstance.getCollateral(bob, address(wethInstance)),
-            10 ether
-        );
-        assertEq(
-            nebulaInstance.getTotalCollateral(address(wethInstance)),
-            10 ether
-        );
+        assertEq(nebulaInstance.getCollateral(bob, address(wethInstance)), 10 ether);
+        assertEq(nebulaInstance.getTotalCollateral(address(wethInstance)), 10 ether);
 
         vm.expectEmit();
         emit Borrow(bob, 10_000e6);
@@ -556,12 +424,8 @@ contract NebulaTest is BasicDeploy {
         uint256 amount = nebulaInstance.getAccruedDebt(bob);
         vm.startPrank(bob);
         usdcInstance.approve(address(nebulaInstance), amount);
-        bytes memory expError = abi.encodeWithSignature(
-            "ERC20InsufficientBalance(address,uint256,uint256)",
-            bob,
-            10_000e6,
-            amount
-        );
+        bytes memory expError =
+            abi.encodeWithSignature("ERC20InsufficientBalance(address,uint256,uint256)", bob, 10_000e6, amount);
         // ERC20InsufficientBalance(0x0000000000000000000000000000000009999992, 10000000000 [1e10], 10003288212 [1e10])
         vm.expectRevert(expError);
         nebulaInstance.repay(11_000e6);
@@ -663,12 +527,8 @@ contract NebulaTest is BasicDeploy {
         vm.warp(367 days);
         vm.roll(367 days);
         uint256 amount = nebulaInstance.getAccruedDebt(bob);
-        bytes memory expError = abi.encodeWithSignature(
-            "ERC20InsufficientBalance(address,uint256,uint256)",
-            bob,
-            10_000e6,
-            amount
-        );
+        bytes memory expError =
+            abi.encodeWithSignature("ERC20InsufficientBalance(address,uint256,uint256)", bob, 10_000e6, amount);
         vm.startPrank(bob);
         usdcInstance.approve(address(nebulaInstance), amount);
         vm.expectRevert(expError);
@@ -719,23 +579,15 @@ contract NebulaTest is BasicDeploy {
 
     function supplyCollateral(address src, uint256 amount) internal {
         vm.startPrank(src);
-        (bool success, ) = payable(address(wethInstance)).call{value: amount}(
-            ""
-        );
+        (bool success,) = payable(address(wethInstance)).call{value: amount}("");
         require(success, "ERR_ETH_TRANSFER_FAILED");
         assertEq(wethInstance.balanceOf(src), amount);
         wethInstance.approve(address(nebulaInstance), amount);
         nebulaInstance.supplyCollateral(address(wethInstance), amount);
         vm.stopPrank();
 
-        assertEq(
-            nebulaInstance.getCollateral(src, address(wethInstance)),
-            amount
-        );
-        assertEq(
-            nebulaInstance.getTotalCollateral(address(wethInstance)),
-            amount
-        );
+        assertEq(nebulaInstance.getCollateral(src, address(wethInstance)), amount);
+        assertEq(nebulaInstance.getTotalCollateral(address(wethInstance)), amount);
     }
 
     function borrow(address src, uint256 amount) internal {
@@ -748,16 +600,7 @@ contract NebulaTest is BasicDeploy {
     function listAsset(address asset, address oracle) internal {
         assertTrue(nebulaInstance.isListed(asset) == false);
         vm.prank(address(timelockInstance));
-        nebulaInstance.updateCollateralConfig(
-            asset,
-            oracle,
-            8,
-            18,
-            1,
-            870,
-            920,
-            10_000 ether
-        );
+        nebulaInstance.updateCollateralConfig(asset, oracle, 8, 18, 1, 870, 920, 10_000 ether);
         assertTrue(nebulaInstance.isListed(address(wethInstance)) == true);
     }
 }

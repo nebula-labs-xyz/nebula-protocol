@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
-import "../BasicDeploy.sol";
+import {BasicDeploy} from "../BasicDeploy.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 
 contract YodaGovernorTest is BasicDeploy {
@@ -10,14 +10,9 @@ contract YodaGovernorTest is BasicDeploy {
         assertEq(tokenInstance.totalSupply(), 0);
         // this is the TGE
         vm.prank(guardian);
-        tokenInstance.initializeTGE(
-            address(ecoInstance),
-            address(treasuryInstance)
-        );
+        tokenInstance.initializeTGE(address(ecoInstance), address(treasuryInstance));
         uint256 ecoBal = tokenInstance.balanceOf(address(ecoInstance));
-        uint256 treasuryBal = tokenInstance.balanceOf(
-            address(treasuryInstance)
-        );
+        uint256 treasuryBal = tokenInstance.balanceOf(address(treasuryInstance));
 
         assertEq(ecoBal, 22_000_000 ether);
         assertEq(treasuryBal, 28_000_000 ether);
@@ -29,9 +24,7 @@ contract YodaGovernorTest is BasicDeploy {
     }
 
     function test_Revert_Initialization() public {
-        bytes memory expError = abi.encodeWithSignature(
-            "InvalidInitialization()"
-        );
+        bytes memory expError = abi.encodeWithSignature("InvalidInitialization()");
         vm.prank(guardian);
         vm.expectRevert(expError); // contract already initialized
         govInstance.initialize(tokenInstance, timelockInstance, guardian);
@@ -58,11 +51,7 @@ contract YodaGovernorTest is BasicDeploy {
         assertEq(votes, 20001 ether);
 
         //create proposal
-        bytes memory callData = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            managerAdmin,
-            1 ether
-        );
+        bytes memory callData = abi.encodeWithSignature("transfer(address,uint256)", managerAdmin, 1 ether);
         address[] memory to = new address[](1);
         to[0] = address(tokenInstance);
         uint256[] memory values = new uint256[](1);
@@ -71,12 +60,7 @@ contract YodaGovernorTest is BasicDeploy {
         calldatas[0] = callData;
 
         vm.prank(alice);
-        uint256 proposalId = govInstance.propose(
-            to,
-            values,
-            calldatas,
-            "Proposal #1: send 1 token to managerAdmin"
-        );
+        uint256 proposalId = govInstance.propose(to, values, calldatas, "Proposal #1: send 1 token to managerAdmin");
 
         vm.roll(365 days + 7201);
         IGovernor.ProposalState state = govInstance.state(proposalId);
@@ -106,11 +90,7 @@ contract YodaGovernorTest is BasicDeploy {
         assertEq(votes, 200_000 ether);
 
         //create proposal
-        bytes memory callData = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            managerAdmin,
-            1 ether
-        );
+        bytes memory callData = abi.encodeWithSignature("transfer(address,uint256)", managerAdmin, 1 ether);
         address[] memory to = new address[](1);
         to[0] = address(tokenInstance);
         uint256[] memory values = new uint256[](1);
@@ -119,12 +99,7 @@ contract YodaGovernorTest is BasicDeploy {
         calldatas[0] = callData;
 
         vm.prank(alice);
-        uint256 proposalId = govInstance.propose(
-            to,
-            values,
-            calldatas,
-            "Proposal #1: send 1 token to managerAdmin"
-        );
+        uint256 proposalId = govInstance.propose(to, values, calldatas, "Proposal #1: send 1 token to managerAdmin");
 
         vm.roll(365 days + 7201);
         IGovernor.ProposalState state = govInstance.state(proposalId);
@@ -168,11 +143,7 @@ contract YodaGovernorTest is BasicDeploy {
         assertEq(votes, 200_000 ether);
 
         //create proposal
-        bytes memory callData = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            managerAdmin,
-            1 ether
-        );
+        bytes memory callData = abi.encodeWithSignature("transfer(address,uint256)", managerAdmin, 1 ether);
         address[] memory to = new address[](1);
         to[0] = address(tokenInstance);
         uint256[] memory values = new uint256[](1);
@@ -181,12 +152,7 @@ contract YodaGovernorTest is BasicDeploy {
         calldatas[0] = callData;
 
         vm.prank(alice);
-        uint256 proposalId = govInstance.propose(
-            to,
-            values,
-            calldatas,
-            "Proposal #1: send 1 token to managerAdmin"
-        );
+        uint256 proposalId = govInstance.propose(to, values, calldatas, "Proposal #1: send 1 token to managerAdmin");
 
         vm.roll(365 days + 7200 + 1);
         IGovernor.ProposalState state1 = govInstance.state(proposalId);
@@ -204,15 +170,8 @@ contract YodaGovernorTest is BasicDeploy {
         IGovernor.ProposalState state2 = govInstance.state(proposalId);
         assertTrue(state2 == IGovernor.ProposalState.Succeeded); //proposal succeded
 
-        bytes32 descHash = keccak256(
-            abi.encodePacked("Proposal #1: send 1 token to managerAdmin")
-        );
-        uint256 proposalId2 = govInstance.hashProposal(
-            to,
-            values,
-            calldatas,
-            descHash
-        );
+        bytes32 descHash = keccak256(abi.encodePacked("Proposal #1: send 1 token to managerAdmin"));
+        uint256 proposalId2 = govInstance.hashProposal(to, values, calldatas, descHash);
 
         assertEq(proposalId, proposalId2);
 
@@ -243,12 +202,8 @@ contract YodaGovernorTest is BasicDeploy {
         assertEq(votes, 200_000 ether);
 
         //create proposal
-        bytes memory callData = abi.encodeWithSignature(
-            "release(address,address,uint256)",
-            address(tokenInstance),
-            managerAdmin,
-            1 ether
-        );
+        bytes memory callData =
+            abi.encodeWithSignature("release(address,address,uint256)", address(tokenInstance), managerAdmin, 1 ether);
 
         address[] memory to = new address[](1);
         to[0] = address(treasuryInstance);
@@ -258,12 +213,7 @@ contract YodaGovernorTest is BasicDeploy {
         calldatas[0] = callData;
 
         vm.prank(alice);
-        uint256 proposalId = govInstance.propose(
-            to,
-            values,
-            calldatas,
-            "Proposal #1: send 1 token to managerAdmin"
-        );
+        uint256 proposalId = govInstance.propose(to, values, calldatas, "Proposal #1: send 1 token to managerAdmin");
 
         vm.roll(365 days + 7200 + 1);
         IGovernor.ProposalState state1 = govInstance.state(proposalId);
@@ -281,15 +231,8 @@ contract YodaGovernorTest is BasicDeploy {
         IGovernor.ProposalState state4 = govInstance.state(proposalId);
         assertTrue(state4 == IGovernor.ProposalState.Succeeded); //proposal succeded
 
-        bytes32 descHash = keccak256(
-            abi.encodePacked("Proposal #1: send 1 token to managerAdmin")
-        );
-        uint256 proposalId2 = govInstance.hashProposal(
-            to,
-            values,
-            calldatas,
-            descHash
-        );
+        bytes32 descHash = keccak256(abi.encodePacked("Proposal #1: send 1 token to managerAdmin"));
+        uint256 proposalId2 = govInstance.hashProposal(to, values, calldatas, descHash);
         assertEq(proposalId, proposalId2);
 
         govInstance.queue(to, values, calldatas, descHash);
@@ -305,10 +248,7 @@ contract YodaGovernorTest is BasicDeploy {
 
         assertTrue(state7 == IGovernor.ProposalState.Executed); //proposal executed
         assertEq(tokenInstance.balanceOf(managerAdmin), 1 ether);
-        assertEq(
-            tokenInstance.balanceOf(address(treasuryInstance)),
-            28_000_000 ether - 1 ether
-        );
+        assertEq(tokenInstance.balanceOf(address(treasuryInstance)), 28_000_000 ether - 1 ether);
     }
 
     function test_Propose_QuorumDefeat() public {
@@ -333,11 +273,7 @@ contract YodaGovernorTest is BasicDeploy {
         assertEq(votes, 30_000 ether);
 
         //create proposal
-        bytes memory callData = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            managerAdmin,
-            1 ether
-        );
+        bytes memory callData = abi.encodeWithSignature("transfer(address,uint256)", managerAdmin, 1 ether);
         address[] memory to = new address[](1);
         to[0] = address(tokenInstance);
         uint256[] memory values = new uint256[](1);
@@ -346,12 +282,7 @@ contract YodaGovernorTest is BasicDeploy {
         calldatas[0] = callData;
 
         vm.prank(alice);
-        uint256 proposalId = govInstance.propose(
-            to,
-            values,
-            calldatas,
-            "Proposal #1: send 1 token to managerAdmin"
-        );
+        uint256 proposalId = govInstance.propose(to, values, calldatas, "Proposal #1: send 1 token to managerAdmin");
 
         vm.roll(365 days + 7201);
         IGovernor.ProposalState state = govInstance.state(proposalId);
@@ -371,11 +302,7 @@ contract YodaGovernorTest is BasicDeploy {
     }
 
     function test_Revert_CreateProposal_Branch1() public {
-        bytes memory callData = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            managerAdmin,
-            1 ether
-        );
+        bytes memory callData = abi.encodeWithSignature("transfer(address,uint256)", managerAdmin, 1 ether);
         address[] memory to = new address[](1);
         to[0] = address(tokenInstance);
         uint256[] memory values = new uint256[](1);
@@ -384,18 +311,10 @@ contract YodaGovernorTest is BasicDeploy {
         calldatas[0] = callData;
 
         bytes memory expError = abi.encodeWithSignature(
-            "GovernorInsufficientProposerVotes(address,uint256,uint256)",
-            managerAdmin,
-            0,
-            20000 ether
+            "GovernorInsufficientProposerVotes(address,uint256,uint256)", managerAdmin, 0, 20000 ether
         );
         vm.prank(managerAdmin);
         vm.expectRevert(expError);
-        govInstance.propose(
-            to,
-            values,
-            calldatas,
-            "Proposal #1: send 1 token to managerAdmin"
-        );
+        govInstance.propose(to, values, calldatas, "Proposal #1: send 1 token to managerAdmin");
     }
 }

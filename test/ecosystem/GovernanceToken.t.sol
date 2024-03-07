@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
-import "../BasicDeploy.sol";
+import {BasicDeploy} from "../BasicDeploy.sol";
 
 contract GovernanceTokenTest is BasicDeploy {
+    uint256 internal vmprimer = 365 days;
+
     event WithdrawEther(address to, uint256 amount);
     event WithdrawTokens(address to, uint256 amount);
-    event BridgeMint(address to, uint256 amount);
+    event BridgeMint(address indexed to, uint256 amount);
     event TGE(uint256 amount);
-
-    uint256 internal vmprimer = 365 days;
 
     function setUp() public {
         deployComplete();
@@ -18,14 +18,9 @@ contract GovernanceTokenTest is BasicDeploy {
         vm.prank(guardian);
         vm.expectEmit();
         emit TGE(INITIAL_SUPPLY);
-        tokenInstance.initializeTGE(
-            address(ecoInstance),
-            address(treasuryInstance)
-        );
+        tokenInstance.initializeTGE(address(ecoInstance), address(treasuryInstance));
         uint256 ecoBal = tokenInstance.balanceOf(address(ecoInstance));
-        uint256 treasuryBal = tokenInstance.balanceOf(
-            address(treasuryInstance)
-        );
+        uint256 treasuryBal = tokenInstance.balanceOf(address(treasuryInstance));
 
         assertEq(ecoBal, 22_000_000 ether);
         assertEq(treasuryBal, 28_000_000 ether);
@@ -50,15 +45,11 @@ contract GovernanceTokenTest is BasicDeploy {
 
     function test_Revert_Receive() public returns (bool success) {
         vm.expectRevert(); // contract does not receive ether
-        (success, ) = payable(address(tokenInstance)).call{value: 100 ether}(
-            ""
-        );
+        (success,) = payable(address(tokenInstance)).call{value: 100 ether}("");
     }
 
     function test_Revert_InitializeUUPS() public {
-        bytes memory expError = abi.encodeWithSignature(
-            "InvalidInitialization()"
-        );
+        bytes memory expError = abi.encodeWithSignature("InvalidInitialization()");
         vm.prank(guardian);
         vm.expectRevert(expError); // contract already initialized
         tokenInstance.initializeUUPS(guardian);
@@ -66,31 +57,20 @@ contract GovernanceTokenTest is BasicDeploy {
 
     function test_Revert_InitializeTGE_Branch1() public {
         bytes memory expError = abi.encodeWithSignature(
-            "AccessControlUnauthorizedAccount(address,bytes32)",
-            managerAdmin,
-            DEFAULT_ADMIN_ROLE
+            "AccessControlUnauthorizedAccount(address,bytes32)", managerAdmin, DEFAULT_ADMIN_ROLE
         );
 
         vm.prank(managerAdmin);
         vm.expectRevert(expError); // Access Control
-        tokenInstance.initializeTGE(
-            address(ecoInstance),
-            address(treasuryInstance)
-        );
+        tokenInstance.initializeTGE(address(ecoInstance), address(treasuryInstance));
     }
 
     function test_Revert_InitializeTGE_Branch2() public {
-        bytes memory expError = abi.encodeWithSignature(
-            "CustomError(string)",
-            "TGE_ALREADY_INITIALIZED"
-        );
+        bytes memory expError = abi.encodeWithSignature("CustomError(string)", "TGE_ALREADY_INITIALIZED");
         vm.prank(guardian);
         vm.expectRevert(expError);
         // vm.expectRevert("ALREADY_INITIALIZED"); // TGE already triggered
-        tokenInstance.initializeTGE(
-            address(ecoInstance),
-            address(treasuryInstance)
-        );
+        tokenInstance.initializeTGE(address(ecoInstance), address(treasuryInstance));
     }
 
     function test_Pause() public {
@@ -108,11 +88,8 @@ contract GovernanceTokenTest is BasicDeploy {
     function test_Revert_Pause_Branch1() public {
         assertEq(tokenInstance.paused(), false);
 
-        bytes memory expError = abi.encodeWithSignature(
-            "AccessControlUnauthorizedAccount(address,bytes32)",
-            managerAdmin,
-            PAUSER_ROLE
-        );
+        bytes memory expError =
+            abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", managerAdmin, PAUSER_ROLE);
 
         vm.prank(managerAdmin);
         vm.expectRevert(expError);
@@ -176,11 +153,8 @@ contract GovernanceTokenTest is BasicDeploy {
 
         vm.prank(guardian);
         tokenInstance.grantRole(BRIDGE_ROLE, bridge);
-        bytes memory expError = abi.encodeWithSignature(
-            "AccessControlUnauthorizedAccount(address,bytes32)",
-            managerAdmin,
-            BRIDGE_ROLE
-        );
+        bytes memory expError =
+            abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", managerAdmin, BRIDGE_ROLE);
         vm.prank(managerAdmin);
         vm.expectRevert(expError);
         tokenInstance.bridgeMint(alice, 20 ether);
@@ -226,10 +200,7 @@ contract GovernanceTokenTest is BasicDeploy {
         vm.prank(guardian);
         tokenInstance.grantRole(BRIDGE_ROLE, bridge);
         // try to bridge
-        bytes memory expError = abi.encodeWithSignature(
-            "CustomError(string)",
-            "BRIDGE_LIMIT"
-        );
+        bytes memory expError = abi.encodeWithSignature("CustomError(string)", "BRIDGE_LIMIT");
         vm.prank(bridge);
         vm.expectRevert(expError); // exceeded bridge limit
         tokenInstance.bridgeMint(alice, 10001 ether);
@@ -248,10 +219,7 @@ contract GovernanceTokenTest is BasicDeploy {
         // give proper access
         vm.prank(guardian);
         tokenInstance.grantRole(BRIDGE_ROLE, bridge);
-        bytes memory expError = abi.encodeWithSignature(
-            "CustomError(string)",
-            "BRIDGE_PROBLEM"
-        );
+        bytes memory expError = abi.encodeWithSignature("CustomError(string)", "BRIDGE_PROBLEM");
         // try to bridge
         vm.prank(bridge);
         vm.expectRevert(expError); // compromised bridge

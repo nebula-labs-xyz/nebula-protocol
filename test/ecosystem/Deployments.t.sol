@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
-import "../BasicDeploy.sol";
+import "../BasicDeploy.sol"; // solhint-disable-line
 
 contract DeploymentsTest is BasicDeploy {
-    function setUp() public {}
-
     function test_001_TokenDeploy() public {
         deployTokenUpgrade();
     }
@@ -44,14 +42,9 @@ contract DeploymentsTest is BasicDeploy {
         assertEq(tokenInstance.totalSupply(), 0);
         // this is the TGE
         vm.prank(guardian);
-        tokenInstance.initializeTGE(
-            address(ecoInstance),
-            address(treasuryInstance)
-        );
+        tokenInstance.initializeTGE(address(ecoInstance), address(treasuryInstance));
         uint256 ecoBal = tokenInstance.balanceOf(address(ecoInstance));
-        uint256 treasuryBal = tokenInstance.balanceOf(
-            address(treasuryInstance)
-        );
+        uint256 treasuryBal = tokenInstance.balanceOf(address(treasuryInstance));
 
         assertEq(ecoBal, 22_000_000 ether);
         assertEq(treasuryBal, 28_000_000 ether);

@@ -1,47 +1,34 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
-import "../BasicDeploy.sol";
+import "../BasicDeploy.sol"; // solhint-disable-line
 import {TeamManager} from "../../contracts/ecosystem/TeamManager.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 
 contract TeamManagerTest is BasicDeploy {
-    event EtherReleased(address indexed to, uint256 amount);
-    event ERC20Released(
-        address indexed token,
-        address indexed to,
-        uint256 amount
-    );
-
     uint256 internal vmprimer = 365 days;
     TeamManager internal tmInstance;
+
+    event EtherReleased(address indexed to, uint256 amount);
+    event ERC20Released(address indexed token, address indexed to, uint256 amount);
 
     function setUp() public {
         deployComplete();
         assertEq(tokenInstance.totalSupply(), 0);
         // this is the TGE
         vm.prank(guardian);
-        tokenInstance.initializeTGE(
-            address(ecoInstance),
-            address(treasuryInstance)
-        );
+        tokenInstance.initializeTGE(address(ecoInstance), address(treasuryInstance));
         uint256 ecoBal = tokenInstance.balanceOf(address(ecoInstance));
-        uint256 treasuryBal = tokenInstance.balanceOf(
-            address(treasuryInstance)
-        );
+        uint256 treasuryBal = tokenInstance.balanceOf(address(treasuryInstance));
 
         assertEq(ecoBal, 22_000_000 ether);
         assertEq(treasuryBal, 28_000_000 ether);
         assertEq(tokenInstance.totalSupply(), ecoBal + treasuryBal);
 
         // deploy Team Manager
-        bytes memory data = abi.encodeCall(
-            TeamManager.initialize,
-            (address(tokenInstance), address(timelockInstance), guardian)
-        );
-        address payable proxy = payable(
-            Upgrades.deployUUPSProxy("TeamManager.sol", data)
-        );
+        bytes memory data =
+            abi.encodeCall(TeamManager.initialize, (address(tokenInstance), address(timelockInstance), guardian));
+        address payable proxy = payable(Upgrades.deployUUPSProxy("TeamManager.sol", data));
         tmInstance = TeamManager(proxy);
         address implementation = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(tmInstance) == implementation);
@@ -51,20 +38,14 @@ contract TeamManagerTest is BasicDeploy {
 
     function test_Revert_Receive() public returns (bool success) {
         vm.expectRevert(); // contract does not receive ether
-        (success, ) = payable(address(tmInstance)).call{value: 100 ether}("");
+        (success,) = payable(address(tmInstance)).call{value: 100 ether}("");
     }
 
     function test_Revert_Initialize() public {
-        bytes memory expError = abi.encodeWithSignature(
-            "InvalidInitialization()"
-        );
+        bytes memory expError = abi.encodeWithSignature("InvalidInitialization()");
         vm.prank(guardian);
         vm.expectRevert(expError); // contract already initialized
-        tmInstance.initialize(
-            address(timelockInstance),
-            address(timelockInstance),
-            guardian
-        );
+        tmInstance.initialize(address(timelockInstance), address(timelockInstance), guardian);
     }
 
     function test_Pause() public {
@@ -80,11 +61,8 @@ contract TeamManagerTest is BasicDeploy {
     }
 
     function test_Revert_addTeamMember_Branch1() public {
-        bytes memory expError = abi.encodeWithSignature(
-            "AccessControlUnauthorizedAccount(address,bytes32)",
-            guardian,
-            MANAGER_ROLE
-        );
+        bytes memory expError =
+            abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", guardian, MANAGER_ROLE);
         vm.prank(guardian);
         vm.expectRevert(expError); // access control violation
         tmInstance.addTeamMember(managerAdmin, 100 ether);
@@ -106,10 +84,7 @@ contract TeamManagerTest is BasicDeploy {
 
     function test_Revert_addTeamMember_Branch3() public {
         vm.prank(address(timelockInstance));
-        bytes memory expError = abi.encodeWithSignature(
-            "CustomError(string)",
-            "SUPPLY_LIMIT"
-        );
+        bytes memory expError = abi.encodeWithSignature("CustomError(string)", "SUPPLY_LIMIT");
         vm.expectRevert(expError);
         tmInstance.addTeamMember(managerAdmin, 10_000_000 ether);
     }
@@ -143,16 +118,9 @@ contract TeamManagerTest is BasicDeploy {
         // part1 - move amount from treasury to TeamManager instance
         // part2 - call TeamManager to addTeamMember
         bytes memory callData1 = abi.encodeWithSignature(
-            "release(address,address,uint256)",
-            address(tokenInstance),
-            address(tmInstance),
-            500_000 ether
+            "release(address,address,uint256)", address(tokenInstance), address(tmInstance), 500_000 ether
         );
-        bytes memory callData2 = abi.encodeWithSignature(
-            "addTeamMember(address,uint256)",
-            managerAdmin,
-            500_000 ether
-        );
+        bytes memory callData2 = abi.encodeWithSignature("addTeamMember(address,uint256)", managerAdmin, 500_000 ether);
         address[] memory to = new address[](2);
         to[0] = address(treasuryInstance);
         to[1] = address(tmInstance);
@@ -164,12 +132,7 @@ contract TeamManagerTest is BasicDeploy {
         calldatas[1] = callData2;
 
         vm.prank(alice);
-        uint256 proposalId = govInstance.propose(
-            to,
-            values,
-            calldatas,
-            "Proposal #2: add managerAdmin as team member"
-        );
+        uint256 proposalId = govInstance.propose(to, values, calldatas, "Proposal #2: add managerAdmin as team member");
 
         vm.roll(365 days + 7200 + 1);
         IGovernor.ProposalState state1 = govInstance.state(proposalId);
@@ -187,15 +150,8 @@ contract TeamManagerTest is BasicDeploy {
         IGovernor.ProposalState state4 = govInstance.state(proposalId);
         assertTrue(state4 == IGovernor.ProposalState.Succeeded); //proposal succeded
 
-        bytes32 descHash = keccak256(
-            abi.encodePacked("Proposal #2: add managerAdmin as team member")
-        );
-        uint256 proposalId2 = govInstance.hashProposal(
-            to,
-            values,
-            calldatas,
-            descHash
-        );
+        bytes32 descHash = keccak256(abi.encodePacked("Proposal #2: add managerAdmin as team member"));
+        uint256 proposalId2 = govInstance.hashProposal(to, values, calldatas, descHash);
         assertEq(proposalId, proposalId2);
 
         govInstance.queue(to, values, calldatas, descHash);
@@ -213,9 +169,6 @@ contract TeamManagerTest is BasicDeploy {
 
         address vestingContract = tmInstance.vestingContracts(managerAdmin);
         assertEq(tokenInstance.balanceOf(vestingContract), 500_000 ether);
-        assertEq(
-            tokenInstance.balanceOf(address(treasuryInstance)),
-            28_000_000 ether - 500_000 ether
-        );
+        assertEq(tokenInstance.balanceOf(address(treasuryInstance)), 28_000_000 ether - 500_000 ether);
     }
 }

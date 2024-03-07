@@ -1,29 +1,24 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
-import "../BasicDeploy.sol";
+import {BasicDeploy} from "../BasicDeploy.sol";
 import {VestingWallet} from "@openzeppelin/contracts/finance/VestingWallet.sol";
 
 contract VestingWalletTest is BasicDeploy {
-    event ERC20Released(address indexed token, uint256 amount);
-    event AddPartner(address account, address vesting, uint256 amount);
-
     uint256 internal vmprimer = 365 days;
     address internal vestingAddr;
+
+    event ERC20Released(address indexed token, uint256 amount);
+    event AddPartner(address account, address vesting, uint256 amount);
 
     function setUp() public {
         deployComplete();
         assertEq(tokenInstance.totalSupply(), 0);
         // this is the TGE
         vm.prank(guardian);
-        tokenInstance.initializeTGE(
-            address(ecoInstance),
-            address(treasuryInstance)
-        );
+        tokenInstance.initializeTGE(address(ecoInstance), address(treasuryInstance));
         uint256 ecoBal = tokenInstance.balanceOf(address(ecoInstance));
-        uint256 treasuryBal = tokenInstance.balanceOf(
-            address(treasuryInstance)
-        );
+        uint256 treasuryBal = tokenInstance.balanceOf(address(treasuryInstance));
 
         assertEq(ecoBal, 22_000_000 ether);
         assertEq(treasuryBal, 28_000_000 ether);

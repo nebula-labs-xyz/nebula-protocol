@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
 import "forge-std/Test.sol"; // solhint-disable-line
 import {IYODA} from "../contracts/interfaces/IYODA.sol";
@@ -21,7 +21,8 @@ import {YodaGovernor} from "../contracts/ecosystem/YodaGovernor.sol";
 import {YodaGovernorV2} from "../contracts/upgrades/YodaGovernorV2.sol";
 import {YodaTimelock} from "../contracts/ecosystem/YodaTimelock.sol";
 import {YodaTimelockV2} from "../contracts/upgrades/YodaTimelockV2.sol";
-import {TimelockControllerUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
+import {TimelockControllerUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
 import {Upgrades, Options} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 contract BasicDeploy is Test {
@@ -69,13 +70,8 @@ contract BasicDeploy is Test {
 
     function deployTokenUpgrade() internal {
         // token deploy
-        bytes memory data = abi.encodeCall(
-            GovernanceToken.initializeUUPS,
-            (guardian)
-        );
-        address payable proxy = payable(
-            Upgrades.deployUUPSProxy("GovernanceToken.sol", data)
-        );
+        bytes memory data = abi.encodeCall(GovernanceToken.initializeUUPS, (guardian));
+        address payable proxy = payable(Upgrades.deployUUPSProxy("GovernanceToken.sol", data));
         tokenInstance = GovernanceToken(proxy);
         address tokenImplementation = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(tokenInstance) == tokenImplementation);
@@ -102,25 +98,15 @@ contract BasicDeploy is Test {
 
     function deployEcosystemUpgrade() internal {
         // token deploy
-        bytes memory data = abi.encodeCall(
-            GovernanceToken.initializeUUPS,
-            (guardian)
-        );
-        address payable proxy = payable(
-            Upgrades.deployUUPSProxy("GovernanceToken.sol", data)
-        );
+        bytes memory data = abi.encodeCall(GovernanceToken.initializeUUPS, (guardian));
+        address payable proxy = payable(Upgrades.deployUUPSProxy("GovernanceToken.sol", data));
         tokenInstance = GovernanceToken(proxy);
         address tokenImplementation = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(tokenInstance) == tokenImplementation);
 
         // ecosystem deploy
-        bytes memory data1 = abi.encodeCall(
-            Ecosystem.initialize,
-            (address(tokenInstance), guardian, pauser)
-        );
-        address payable proxy1 = payable(
-            Upgrades.deployUUPSProxy("Ecosystem.sol", data1)
-        );
+        bytes memory data1 = abi.encodeCall(Ecosystem.initialize, (address(tokenInstance), guardian, pauser));
+        address payable proxy1 = payable(Upgrades.deployUUPSProxy("Ecosystem.sol", data1));
         ecoInstance = Ecosystem(proxy1);
         address ecoImplementation = Upgrades.getImplementationAddress(proxy1);
         assertFalse(address(ecoInstance) == ecoImplementation);
@@ -149,24 +135,14 @@ contract BasicDeploy is Test {
     function deployTreasuryUpgrade() internal {
         vm.warp(365 days);
         // token deploy
-        bytes memory data = abi.encodeCall(
-            GovernanceToken.initializeUUPS,
-            (guardian)
-        );
-        address payable proxy = payable(
-            Upgrades.deployUUPSProxy("GovernanceToken.sol", data)
-        );
+        bytes memory data = abi.encodeCall(GovernanceToken.initializeUUPS, (guardian));
+        address payable proxy = payable(Upgrades.deployUUPSProxy("GovernanceToken.sol", data));
         tokenInstance = GovernanceToken(proxy);
         address tokenImplementation = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(tokenInstance) == tokenImplementation);
         //deploy Treasury
-        bytes memory data1 = abi.encodeCall(
-            Treasury.initialize,
-            (guardian, address(timelockInstance))
-        );
-        address payable proxy1 = payable(
-            Upgrades.deployUUPSProxy("Treasury.sol", data1)
-        );
+        bytes memory data1 = abi.encodeCall(Treasury.initialize, (guardian, address(timelockInstance)));
+        address payable proxy1 = payable(Upgrades.deployUUPSProxy("Treasury.sol", data1));
         treasuryInstance = Treasury(proxy1);
         address implAddressV1 = Upgrades.getImplementationAddress(proxy1);
         assertFalse(address(treasuryInstance) == implAddressV1);
@@ -183,17 +159,12 @@ contract BasicDeploy is Test {
         assertEq(treasuryInstanceV2.version(), 2);
         assertFalse(implAddressV2 == implAddressV1);
 
-        bool isUpgrader = treasuryInstanceV2.hasRole(
-            UPGRADER_ROLE,
-            managerAdmin
-        );
+        bool isUpgrader = treasuryInstanceV2.hasRole(UPGRADER_ROLE, managerAdmin);
         assertTrue(isUpgrader == true);
 
         vm.prank(guardian);
         treasuryInstanceV2.revokeRole(UPGRADER_ROLE, managerAdmin);
-        assertFalse(
-            treasuryInstanceV2.hasRole(UPGRADER_ROLE, managerAdmin) == true
-        );
+        assertFalse(treasuryInstanceV2.hasRole(UPGRADER_ROLE, managerAdmin) == true);
     }
 
     function deployTimelockUpgrade() internal {
@@ -201,13 +172,8 @@ contract BasicDeploy is Test {
         uint256 timelockDelay = 24 * 60 * 60;
         address[] memory temp = new address[](1);
         temp[0] = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-        bytes memory data = abi.encodeCall(
-            YodaTimelock.initialize,
-            (timelockDelay, temp, temp, guardian)
-        );
-        address payable proxy = payable(
-            Upgrades.deployUUPSProxy("YodaTimelock.sol", data)
-        );
+        bytes memory data = abi.encodeCall(YodaTimelock.initialize, (timelockDelay, temp, temp, guardian));
+        address payable proxy = payable(Upgrades.deployUUPSProxy("YodaTimelock.sol", data));
         YodaTimelock instance = YodaTimelock(proxy);
         address implAddressV1 = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(instance) == implAddressV1);
@@ -234,13 +200,8 @@ contract BasicDeploy is Test {
 
     function deployGovernorUpgrade() internal {
         // deploy Token
-        bytes memory data = abi.encodeCall(
-            GovernanceToken.initializeUUPS,
-            (guardian)
-        );
-        address payable proxy = payable(
-            Upgrades.deployUUPSProxy("GovernanceToken.sol", data)
-        );
+        bytes memory data = abi.encodeCall(GovernanceToken.initializeUUPS, (guardian));
+        address payable proxy = payable(Upgrades.deployUUPSProxy("GovernanceToken.sol", data));
         tokenInstance = GovernanceToken(proxy);
         address tokenImplementation = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(tokenInstance) == tokenImplementation);
@@ -249,29 +210,17 @@ contract BasicDeploy is Test {
         uint256 timelockDelay = 24 * 60 * 60;
         address[] memory temp = new address[](1);
         temp[0] = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-        bytes memory data1 = abi.encodeCall(
-            YodaTimelock.initialize,
-            (timelockDelay, temp, temp, guardian)
-        );
-        address payable proxy1 = payable(
-            Upgrades.deployUUPSProxy("YodaTimelock.sol", data1)
-        );
+        bytes memory data1 = abi.encodeCall(YodaTimelock.initialize, (timelockDelay, temp, temp, guardian));
+        address payable proxy1 = payable(Upgrades.deployUUPSProxy("YodaTimelock.sol", data1));
         YodaTimelock instance = YodaTimelock(proxy1);
         address implAddressV1 = Upgrades.getImplementationAddress(proxy1);
         assertFalse(address(instance) == implAddressV1);
 
         // deploy Governor
         bytes memory data2 = abi.encodeCall(
-            YodaGovernor.initialize,
-            (
-                tokenInstance,
-                TimelockControllerUpgradeable(payable(proxy1)),
-                guardian
-            )
+            YodaGovernor.initialize, (tokenInstance, TimelockControllerUpgradeable(payable(proxy1)), guardian)
         );
-        address payable proxy2 = payable(
-            Upgrades.deployUUPSProxy("YodaGovernor.sol", data2)
-        );
+        address payable proxy2 = payable(Upgrades.deployUUPSProxy("YodaGovernor.sol", data2));
         YodaGovernor govInstanceV1 = YodaGovernor(proxy2);
         address govImplAddressV1 = Upgrades.getImplementationAddress(proxy2);
         assertFalse(address(govInstanceV1) == govImplAddressV1);
@@ -291,14 +240,9 @@ contract BasicDeploy is Test {
         assertEq(tokenInstance.totalSupply(), 0);
         // this is the TGE
         vm.prank(guardian);
-        tokenInstance.initializeTGE(
-            address(ecoInstance),
-            address(treasuryInstance)
-        );
+        tokenInstance.initializeTGE(address(ecoInstance), address(treasuryInstance));
         uint256 ecoBal = tokenInstance.balanceOf(address(ecoInstance));
-        uint256 treasuryBal = tokenInstance.balanceOf(
-            address(treasuryInstance)
-        );
+        uint256 treasuryBal = tokenInstance.balanceOf(address(treasuryInstance));
 
         assertEq(ecoBal, 22_000_000 ether);
         assertEq(treasuryBal, 28_000_000 ether);
@@ -318,9 +262,7 @@ contract BasicDeploy is Test {
                 guardian
             )
         );
-        address payable proxy = payable(
-            Upgrades.deployUUPSProxy("Nebula.sol", data)
-        );
+        address payable proxy = payable(Upgrades.deployUUPSProxy("Nebula.sol", data));
         nebulaInstance = Nebula(proxy);
         address implementationV1 = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(nebulaInstance) == implementationV1);
@@ -342,33 +284,21 @@ contract BasicDeploy is Test {
 
         vm.prank(guardian);
         nebulaInstance.revokeRole(UPGRADER_ROLE, managerAdmin);
-        assertTrue(
-            nebulaInstance.hasRole(UPGRADER_ROLE, managerAdmin) == false
-        );
+        assertTrue(nebulaInstance.hasRole(UPGRADER_ROLE, managerAdmin) == false);
     }
 
     function deployComplete() internal {
         vm.warp(365 days);
         // token deploy
-        bytes memory data = abi.encodeCall(
-            GovernanceToken.initializeUUPS,
-            (guardian)
-        );
-        address payable proxy = payable(
-            Upgrades.deployUUPSProxy("GovernanceToken.sol", data)
-        );
+        bytes memory data = abi.encodeCall(GovernanceToken.initializeUUPS, (guardian));
+        address payable proxy = payable(Upgrades.deployUUPSProxy("GovernanceToken.sol", data));
         tokenInstance = GovernanceToken(proxy);
         address tokenImplementation = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(tokenInstance) == tokenImplementation);
 
         // ecosystem deploy
-        bytes memory data1 = abi.encodeCall(
-            Ecosystem.initialize,
-            (address(tokenInstance), guardian, pauser)
-        );
-        address payable proxy1 = payable(
-            Upgrades.deployUUPSProxy("Ecosystem.sol", data1)
-        );
+        bytes memory data1 = abi.encodeCall(Ecosystem.initialize, (address(tokenInstance), guardian, pauser));
+        address payable proxy1 = payable(Upgrades.deployUUPSProxy("Ecosystem.sol", data1));
         ecoInstance = Ecosystem(proxy1);
         address ecoImplementation = Upgrades.getImplementationAddress(proxy1);
         assertFalse(address(ecoInstance) == ecoImplementation);
@@ -377,29 +307,17 @@ contract BasicDeploy is Test {
         uint256 timelockDelay = 24 * 60 * 60;
         address[] memory temp = new address[](1);
         temp[0] = ethereum;
-        bytes memory data2 = abi.encodeCall(
-            YodaTimelock.initialize,
-            (timelockDelay, temp, temp, guardian)
-        );
-        address payable proxy2 = payable(
-            Upgrades.deployUUPSProxy("YodaTimelock.sol", data2)
-        );
+        bytes memory data2 = abi.encodeCall(YodaTimelock.initialize, (timelockDelay, temp, temp, guardian));
+        address payable proxy2 = payable(Upgrades.deployUUPSProxy("YodaTimelock.sol", data2));
         timelockInstance = YodaTimelock(proxy2);
         address tlImplementation = Upgrades.getImplementationAddress(proxy2);
         assertFalse(address(timelockInstance) == tlImplementation);
 
         // governor deploy
         bytes memory data3 = abi.encodeCall(
-            YodaGovernor.initialize,
-            (
-                tokenInstance,
-                TimelockControllerUpgradeable(payable(proxy2)),
-                guardian
-            )
+            YodaGovernor.initialize, (tokenInstance, TimelockControllerUpgradeable(payable(proxy2)), guardian)
         );
-        address payable proxy3 = payable(
-            Upgrades.deployUUPSProxy("YodaGovernor.sol", data3)
-        );
+        address payable proxy3 = payable(Upgrades.deployUUPSProxy("YodaGovernor.sol", data3));
         govInstance = YodaGovernor(proxy3);
         address govImplementation = Upgrades.getImplementationAddress(proxy3);
         assertFalse(address(govInstance) == govImplementation);
@@ -415,13 +333,8 @@ contract BasicDeploy is Test {
         vm.stopPrank();
 
         //deploy Treasury
-        bytes memory data4 = abi.encodeCall(
-            Treasury.initialize,
-            (guardian, address(timelockInstance))
-        );
-        address payable proxy4 = payable(
-            Upgrades.deployUUPSProxy("Treasury.sol", data4)
-        );
+        bytes memory data4 = abi.encodeCall(Treasury.initialize, (guardian, address(timelockInstance)));
+        address payable proxy4 = payable(Upgrades.deployUUPSProxy("Treasury.sol", data4));
         treasuryInstance = Treasury(proxy4);
         address tImplementation = Upgrades.getImplementationAddress(proxy4);
         assertFalse(address(treasuryInstance) == tImplementation);

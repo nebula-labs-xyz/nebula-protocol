@@ -9,13 +9,14 @@ pragma solidity ^0.8.23;
  * @custom:security-contact security@nebula-labs.xyz
  */
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IVESTING} from "../interfaces/IVesting.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract InvestorVesting is IVESTING, Context, Ownable {
+
+contract InvestorVesting is IVESTING, Context, Ownable2Step {
     /// @dev token contract instance
     IERC20 internal tokenContract;
     /// @dev amount of tokens released

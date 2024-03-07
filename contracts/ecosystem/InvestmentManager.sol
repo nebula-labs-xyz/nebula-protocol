@@ -11,6 +11,7 @@ import {IYODA} from "../interfaces/IYODA.sol";
 import {IWETH9} from "../interfaces/IWETH9.sol";
 import {IINVESTOR} from "../interfaces/IInvestmentManager.sol";
 import {InvestorVesting} from "./InvestorVesting.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
@@ -135,13 +136,13 @@ contract InvestmentManager is
      * @dev Processes WETH investment into a round.
      * @param round_ round number in question
      * @param amount amount of ETH to invest
-     * @return success boolean
      */
-    function investWETH(uint8 round_, uint256 amount) external whenNotPaused returns (bool success) {
+    function investWETH(uint8 round_, uint256 amount) external whenNotPaused  {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         invest(round_, amount);
-        success = wethContract.transferFrom(msg.sender, address(this), amount);
-        if (!success) revert CustomError("WETH_TRANSFER_FAILED");
+        SafeERC20.safeTransferFrom(wethContract, msg.sender, address(this), amount);
+        // success = wethContract.transferFrom(msg.sender, address(this), amount);
+        // if (!success) revert CustomError("WETH_TRANSFER_FAILED");
     }
 
     /**
@@ -161,10 +162,10 @@ contract InvestmentManager is
 
         investors_[round_][pos - 1] = investors_[round_][investors_[round_].length - 1];
         investors_[round_].pop();
-        delete ipos[round_][msg.sender];
+        ipos[round_][msg.sender] = 0;
 
         Investment memory item = investorAllocations[round_][msg.sender];
-        delete investorAllocations[round][msg.sender];
+        investorAllocations[round][msg.sender] = Investment(0, 0);
 
         totalAllocation -= item.tokenAmount;
         current.etherInvested -= item.etherAmount;
@@ -219,7 +220,7 @@ contract InvestmentManager is
         for (uint64 i = 0; i < len; ++i) {
             Investment memory item = investorAllocations[round_][investors[i]];
             totalAllocation -= item.tokenAmount;
-            delete investorAllocations[round_][investors[i]];
+            investorAllocations[round_][investors[i]] = Investment(0, 0);
 
             bool success = wethContract.transfer(investors[i], item.etherAmount);
             if (!success) revert CustomError("WETH_TRANSFER_FAILED");
@@ -305,7 +306,8 @@ contract InvestmentManager is
     function deployVestingContracts(uint8 round_) internal {
         address[] memory investors = investors_[round_];
         uint256 len = investors.length;
-        delete investors;
+        address[] memory temp;
+        investors = temp;
         for (uint256 i = 0; i < len; ++i) {
             uint256 alloc = investorAllocations[round][investors[i]].tokenAmount;
             InvestorVesting vestingContract = new InvestorVesting(

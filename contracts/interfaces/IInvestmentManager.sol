@@ -39,7 +39,7 @@ interface IINVESTOR {
 
     function investEther(uint8 round) external payable;
 
-    function investWETH(uint8 round, uint256 amount) external returns (bool);
+    function investWETH(uint8 round, uint256 amount) external;
 
     function cancelInvestment(uint8 round) external returns (bool);
 

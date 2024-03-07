@@ -9,13 +9,13 @@ pragma solidity ^0.8.23;
  * @custom:security-contact security@nebula-labs.xyz
  */
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITEAMVESTING} from "../interfaces/ITeamVesting.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract TeamVesting is ITEAMVESTING, Context, Ownable {
+contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
     /// @dev token contract instance
     IERC20 private tokenContract;
     /// @dev amount of tokens released
@@ -30,12 +30,20 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable {
     address private _token;
 
     /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyTimelock() {
+        _checkTimelock();
+        _;
+    }
+
+    /**
      * @dev Sets the owner to beneficiary address, the start timestamp and the
      * vesting duration of the vesting contract.
      */
-    constructor(address token, address timelock, address beneficiary, uint64 startTimestamp, uint64 durationSeconds)
+    constructor(address token, address timelock, address initialOwner, uint64 startTimestamp, uint64 durationSeconds)
         payable
-        Ownable(beneficiary)
+        Ownable(initialOwner)
     {
         _token = token;
         _timelock = timelock;
@@ -117,10 +125,19 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable {
     }
 
     /**
+     * @dev Throws if the sender is not the timelock.
+     */
+    function _checkTimelock() internal view virtual {
+        if (_timelock != _msgSender()) {
+            revert CustomError("UNAUTHORIZED");
+        }
+    }
+    /**
      * @dev Calculates the amount of tokens that has already vested. Default implementation is a linear vesting curve.
      * @param timestamp current timestamp
      * @return amount vested
      */
+
     function vestedAmount(uint64 timestamp) internal view virtual returns (uint256) {
         return _vestingSchedule(tokenContract.balanceOf(address(this)) + released(), timestamp);
     }

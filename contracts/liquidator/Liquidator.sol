@@ -36,6 +36,16 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
     /// @dev Uniswap router instance
     ISwapRouter private uniswapRouter;
 
+    error CustomError(string msg);
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyVault() {
+        _checkVault();
+        _;
+    }
+
     constructor(address usdc, address nebula, address balancerVault_, address uniswapRouter_, address govToken)
         Ownable(msg.sender)
     {
@@ -66,15 +76,14 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
     }
 
     /**
-     * @dev triggers Balancer flash loan
-     * @param tokens IERC20 instances array
-     * @param amounts corresponding amounts array
-     * @param userData borrower address
+     * @dev withdraws profit in USDC, and gov tokens required to make the liquidation (20_000e18)
      */
-    function makeFlashLoan(IERC20[] memory tokens, uint256[] memory amounts, bytes memory userData) internal {
-        balancerVault.flashLoan(this, tokens, amounts, userData);
+    function withdraw() external onlyOwner {
+        uint256 profit = usdcContract.balanceOf(address(this));
+        uint256 govBalance = govTokenContract.balanceOf(address(this));
+        SafeERC20.safeTransfer(usdcContract, msg.sender, profit);
+        SafeERC20.safeTransfer(govTokenContract, msg.sender, govBalance);
     }
-
     /**
      * @dev receives Balancer flash loan
      * @param tokens IERC20 instances array
@@ -82,13 +91,13 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
      * @param feeAmounts corresponding fee amounts array
      * @param userData borrower address
      */
+
     function receiveFlashLoan(
         IERC20[] memory tokens,
         uint256[] memory amounts,
         uint256[] memory feeAmounts,
         bytes memory userData
-    ) external override {
-        require(msg.sender == address(balancerVault), "ERR_ACCESS_CONTROL");
+    ) external override onlyVault {
         address target = address(uint160(bytes20(userData)));
         address[] memory assets = nebulaContract.getUserCollateralAssets(target);
         uint256 len = assets.length;
@@ -120,12 +129,22 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
     }
 
     /**
+     * @dev triggers Balancer flash loan
+     * @param tokens IERC20 instances array
+     * @param amounts corresponding amounts array
+     * @param userData borrower address
+     */
+    function makeFlashLoan(IERC20[] memory tokens, uint256[] memory amounts, bytes memory userData) internal {
+        balancerVault.flashLoan(this, tokens, amounts, userData);
+    }
+    /**
      * @dev perform asset swap to USDC
      * @param asset address
      * @param swapAmount amount of asset you want to swap
      * @param amountOutMin how much to get back in USDC
      * @return amountOut of the swap
      */
+
     function uniswapV3(address asset, uint256 swapAmount, uint256 amountOutMin) internal returns (uint256) {
         uint24 poolFee = 3000;
         address usdc = address(usdcContract);
@@ -151,12 +170,11 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
     }
 
     /**
-     * @dev withdraws profit in USDC, and gov tokens required to make the liquidation (20_000e18)
+     * @dev Throws if the sender is not the timelock.
      */
-    function withdraw() external onlyOwner {
-        uint256 profit = usdcContract.balanceOf(address(this));
-        uint256 govBalance = govTokenContract.balanceOf(address(this));
-        SafeERC20.safeTransfer(usdcContract, msg.sender, profit);
-        SafeERC20.safeTransfer(govTokenContract, msg.sender, govBalance);
+    function _checkVault() internal view virtual {
+        if (address(balancerVault) != _msgSender()) {
+            revert CustomError("UNAUTHORIZED");
+        }
     }
 }

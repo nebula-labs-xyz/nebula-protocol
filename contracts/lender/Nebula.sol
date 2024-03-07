@@ -188,7 +188,7 @@ contract Nebula is
         _mint(msg.sender, value);
 
         emit SupplyLiquidity(msg.sender, amount);
-        require(baseContract.transferFrom(msg.sender, address(this), amount), "ERR_TRANSFER_IN_FAILED");
+        TH.safeTransferFrom(baseContract, msg.sender, address(this), amount);
     }
 
     /**
@@ -224,7 +224,7 @@ contract Nebula is
         _burn(msg.sender, amount);
 
         emit Exchange(msg.sender, amount, value);
-        require(baseContract.transfer(msg.sender, value), "ERR_TRANSFER_OUT_FAILED");
+        TH.safeTransfer(baseContract, msg.sender, value);
     }
 
     /**
@@ -251,7 +251,7 @@ contract Nebula is
         loans[msg.sender] = amount + balance;
 
         emit Borrow(msg.sender, amount);
-        require(baseContract.transfer(msg.sender, amount), "ERR_TRANSFER_OUT_FAILED");
+        TH.safeTransfer(baseContract, msg.sender, amount);
     }
 
     /**
@@ -802,7 +802,7 @@ contract Nebula is
      */
     function repayInternal(uint256 amount) internal {
         emit Repay(msg.sender, amount);
-        require(baseContract.transferFrom(msg.sender, address(this), amount), "ERR_TRANSFER_IN_FAILED");
+        TH.safeTransferFrom(baseContract, msg.sender, address(this), amount);
     }
 
     /**

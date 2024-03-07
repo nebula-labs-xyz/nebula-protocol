@@ -44,7 +44,7 @@ This is a foundry repository. To get more information visit [Foundry](https://gi
 You must have foundry installed.
 
 ```
-curl -L https://foundry.paradigm.xyz | bash)
+curl -L https://foundry.paradigm.xyz | bash
 foundryup
 ```
 

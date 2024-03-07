@@ -4,7 +4,6 @@ package-lock.json
 node_modules
 archive
 .DS_STORE
-saved.husky
 /.centora_internal/**
 .centora_internal/*
 

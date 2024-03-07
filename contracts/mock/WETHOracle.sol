@@ -13,6 +13,6 @@ contract WETHPriceConsumerV3 {
         view
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
-        return (1, price, 1, 1, 1);
+        return (1, price, 1, block.timestamp, 1);
     }
 }

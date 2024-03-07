@@ -15,7 +15,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-
 contract InvestorVesting is IVESTING, Context, Ownable2Step {
     /// @dev token contract instance
     IERC20 internal tokenContract;

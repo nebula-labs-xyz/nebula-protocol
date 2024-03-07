@@ -740,8 +740,13 @@ contract Nebula is
      * @return asset price
      */
     function getAssetPrice(address oracle) public view returns (uint256) {
-        (, int256 answer,,,) = AggregatorV3Interface(oracle).latestRoundData();
-        return uint256(answer);
+        (uint80 roundId, int256 price,, uint256 updatedAt, uint80 answeredInRound) =
+            AggregatorV3Interface(oracle).latestRoundData();
+
+        require(answeredInRound >= roundId, "ERR_STALE_PRICE");
+        require(updatedAt > block.timestamp - 60 * 60, "ERR_STALE_PRICE");
+
+        return uint256(price);
     }
 
     /**

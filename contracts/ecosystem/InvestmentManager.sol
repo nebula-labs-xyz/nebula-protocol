@@ -63,6 +63,7 @@ contract InvestmentManager is
     mapping(uint8 => mapping(address => address)) public vestingContracts;
     /// @dev Tracks investor allocations per round
     mapping(uint8 => mapping(address => Investment)) public investorAllocations;
+    uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {

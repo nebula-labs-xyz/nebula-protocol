@@ -44,6 +44,7 @@ contract Treasury is
     uint64 private _duration;
     /// @dev UUPS version
     uint8 public version;
+    uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {

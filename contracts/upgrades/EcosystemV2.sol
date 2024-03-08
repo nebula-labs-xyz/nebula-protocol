@@ -60,6 +60,7 @@ contract EcosystemV2 is
     uint8 public version;
     /// @dev Addresses of vesting contracts issued to partners
     mapping(address => address) public vestingContracts;
+    uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {

@@ -40,6 +40,7 @@ contract YodaGovernorV2 is
 {
     /// @dev UUPS version tracker
     uint8 public uupsVersion;
+    uint256[50] private __gap;
 
     /**
      * @dev event emitted on UUPS upgrade

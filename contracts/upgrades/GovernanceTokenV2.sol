@@ -47,6 +47,7 @@ contract GovernanceTokenV2 is
     uint8 public version;
     /// @dev tge initialized variable
     uint8 public tge;
+    uint256[50] private __gap;
 
     /// @dev event emitted at TGE
     /// @param amount token amount

@@ -17,6 +17,7 @@ contract YodaTimelock is TimelockControllerUpgradeable, UUPSUpgradeable {
     bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     /// @dev UUPS version tracker
     uint8 public version;
+    uint256[50] private __gap;
 
     /**
      * @dev event emitted on UUPS upgrade

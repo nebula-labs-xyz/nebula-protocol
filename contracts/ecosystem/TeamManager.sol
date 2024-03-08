@@ -47,6 +47,7 @@ contract TeamManager is
     address public timelock;
     /// @dev number of UUPS upgrades
     uint8 public version;
+    uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {

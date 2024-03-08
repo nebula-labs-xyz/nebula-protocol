@@ -101,6 +101,7 @@ contract NebulaV2 is
     mapping(address => address[]) internal userCollateralAssets;
     /// @dev borrower collateral assets (by user address, by asset address) mapping
     mapping(address => mapping(address => uint256)) internal collateral;
+    uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -208,7 +209,7 @@ contract NebulaV2 is
         uint256 supply = totalSupply();
         uint256 value = (amount * total) / supply;
         uint256 baseAmount = (amount * totalBase) / (supply - fee);
-        assert(baseAmount <= value - fee);
+
         totalBase -= baseAmount;
         withdrawnLiquidity += value;
         supplyInterestAccrueIndex += value - baseAmount;

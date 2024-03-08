@@ -104,7 +104,7 @@ abstract contract ERC20Mock is Context, IERC20, IERC20Metadata, IERC20Errors {
         _transfer(from, to, value);
         return true;
     }
-    
+
     /**
      * @dev Returns the name of the token.
      */
@@ -151,16 +151,12 @@ abstract contract ERC20Mock is Context, IERC20, IERC20Metadata, IERC20Errors {
         return _balances[account];
     }
 
-
-
     /**
      * @dev See {IERC20-allowance}.
      */
     function allowance(address owner, address spender) public view virtual returns (uint256) {
         return _allowances[owner][spender];
     }
-
-
 
     /**
      * @dev Moves a `value` amount of tokens from `from` to `to`.

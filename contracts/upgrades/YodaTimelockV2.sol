@@ -17,12 +17,12 @@ contract YodaTimelockV2 is TimelockControllerUpgradeable, UUPSUpgradeable {
     bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     /// @dev UUPS version tracker
     uint8 public version;
+
     /**
      * @dev event emitted on UUPS upgrade
      * @param src upgrade sender address
      * @param implementation new implementation address
      */
-
     event Upgrade(address indexed src, address indexed implementation);
 
     /// @custom:oz-upgrades-unsafe-allow constructor

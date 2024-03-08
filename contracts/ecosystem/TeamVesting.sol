@@ -41,10 +41,13 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      * @dev Sets the owner to beneficiary address, the start timestamp and the
      * vesting duration of the vesting contract.
      */
-    constructor(address token, address timelock, address beneficiary, uint64 startTimestamp, uint64 durationSeconds) // solhint-disable-line
-        payable
-        Ownable(beneficiary)
-    {
+    constructor(
+        address token,
+        address timelock,
+        address beneficiary, // solhint-disable-line
+        uint64 startTimestamp,
+        uint64 durationSeconds
+    ) payable Ownable(beneficiary) {
         _token = token;
         _timelock = timelock;
         _start = startTimestamp;
@@ -124,12 +127,12 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
             revert CustomError("UNAUTHORIZED");
         }
     }
+
     /**
      * @dev Calculates the amount of tokens that has already vested. Default implementation is a linear vesting curve.
      * @param timestamp current timestamp
      * @return amount vested
      */
-
     function vestedAmount(uint64 timestamp) internal view virtual returns (uint256) {
         return _vestingSchedule(tokenContract.balanceOf(address(this)) + released(), timestamp);
     }

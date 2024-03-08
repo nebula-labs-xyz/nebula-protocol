@@ -187,7 +187,6 @@ contract InvestmentManager is
 
         round++;
         deployVestingContracts(round_);
-        
         wethContract.withdraw(current.etherInvested);
 
         (bool success,) = treasury.call{value: current.etherInvested}("");
@@ -213,7 +212,6 @@ contract InvestmentManager is
 
         rounds.pop();
         supply -= current.tokenAllocation;
-        
         for (uint64 i = 0; i < len; ++i) {
             Investment memory item = investorAllocations[round_][investors[i]];
             totalAllocation -= item.tokenAmount;

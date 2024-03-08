@@ -101,6 +101,7 @@ contract Nebula is
     mapping(address => address[]) internal userCollateralAssets;
     /// @dev borrower collateral assets (by user address, by asset address) mapping
     mapping(address => mapping(address => uint256)) internal collateral;
+    uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {

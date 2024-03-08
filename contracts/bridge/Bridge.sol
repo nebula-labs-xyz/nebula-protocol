@@ -21,18 +21,16 @@ contract Bridge is IBRIDGE, Initializable, PausableUpgradeable, AccessControlUpg
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
     /// @dev AccessControl Pauser Role
+
     bytes32 internal constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     /// @dev AccessControl Manager Role
     bytes32 internal constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     /// @dev AccessControl Upgrader Role
     bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
-
-
     /// @dev EnumerableSet of supported tokens
     EnumerableSet.AddressSet internal tokenSet;
     /// @dev EnumerableSet of supported chains
     EnumerableSet.UintSet internal chainSet;
-
     /// @dev stores last transaction ID
     uint256 public transactionId;
     /// @dev chain transcation count, by chainId
@@ -241,9 +239,6 @@ contract Bridge is IBRIDGE, Initializable, PausableUpgradeable, AccessControlUpg
     function getTransaction(uint256 tranId) external view returns (Transaction memory) {
         return transactions[tranId];
     }
-
-
-
 
     /// @inheritdoc UUPSUpgradeable
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {

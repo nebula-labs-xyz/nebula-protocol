@@ -31,10 +31,12 @@ contract InvestorVesting is IVESTING, Context, Ownable2Step {
      * @dev Sets the owner to beneficiary address, the start timestamp and the
      * vesting duration of the vesting contract.
      */
-    constructor(address token, address beneficiary, uint64 startTimestamp, uint64 durationSeconds) // solhint-disable-line
-        payable
-        Ownable(beneficiary)
-    {
+    constructor(
+        address token,
+        address beneficiary, // solhint-disable-line
+        uint64 startTimestamp,
+        uint64 durationSeconds
+    ) payable Ownable(beneficiary) {
         _token = token;
         _start = startTimestamp;
         _duration = durationSeconds;

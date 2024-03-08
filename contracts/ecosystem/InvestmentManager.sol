@@ -12,6 +12,7 @@ import {IWETH9} from "../interfaces/IWETH9.sol";
 import {IINVESTOR} from "../interfaces/IInvestmentManager.sol";
 import {InvestorVesting} from "./InvestorVesting.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IERC20, SafeERC20 as TH} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -205,14 +206,14 @@ contract InvestmentManager is
         }
 
         address[] memory investors = investors_[round_];
-        uint64 len = uint64(investors.length);
+        uint64 len = SafeCast.toUint64(investors.length);
         if (round_ != rounds.length - 1 || round_ == 0) {
             revert CustomError("CANT_CANCEL_ROUND");
         }
 
         rounds.pop();
         supply -= current.tokenAllocation;
-        for (uint64 i = 0; i < len; ++i) {
+        for (uint64 i; i < len; ++i) {
             Investment memory item = investorAllocations[round_][investors[i]];
             totalAllocation -= item.tokenAmount;
             investorAllocations[round_][investors[i]] = Investment(0, 0);
@@ -302,13 +303,13 @@ contract InvestmentManager is
         uint256 len = investors.length;
         address[] memory temp;
         investors = temp;
-        for (uint256 i = 0; i < len; ++i) {
+        for (uint256 i; i < len; ++i) {
             uint256 alloc = investorAllocations[round][investors[i]].tokenAmount;
             InvestorVesting vestingContract = new InvestorVesting(
                 address(ecosystemToken),
                 investors[i],
-                uint64(block.timestamp + 365 days), // cliff timestamp
-                uint64(730 days) // duration after cliff
+                SafeCast.toUint64(block.timestamp + 365 days), // cliff timestamp
+                SafeCast.toUint64(730 days) // duration after cliff
             );
             vestingContracts[round][investors[i]] = address(vestingContract);
             TH.safeTransfer(ecosystemToken, address(vestingContract), alloc);

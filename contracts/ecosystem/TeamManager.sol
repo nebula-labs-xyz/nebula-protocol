@@ -9,6 +9,7 @@ pragma solidity ^0.8.23;
 
 import {IYODA} from "../interfaces/IYODA.sol";
 import {ITEAMMANAGER} from "../interfaces/ITeamManager.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20 as TH} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {TeamVesting} from "./TeamVesting.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -107,8 +108,8 @@ contract TeamManager is
             address(ecosystemToken),
             timelock,
             beneficiary,
-            uint64(block.timestamp + 365 days), // cliff timestamp
-            uint64(730 days) // duration after cliff
+            SafeCast.toUint64(block.timestamp + 365 days), // cliff timestamp
+            SafeCast.toUint64(730 days) // duration after cliff
         );
 
         allocations[beneficiary] = amount;

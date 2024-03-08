@@ -10,10 +10,11 @@ pragma solidity ^0.8.23;
  */
 
 import {IVESTING} from "../interfaces/IVesting.sol";
+import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
-import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 contract InvestorVesting is IVESTING, Context, Ownable2Step {
     /// @dev token contract instance
@@ -92,7 +93,7 @@ contract InvestorVesting is IVESTING, Context, Ownable2Step {
      * @return amount of vested tokens
      */
     function releasable() public view virtual returns (uint256) {
-        return vestedAmount(uint64(block.timestamp)) - released();
+        return vestedAmount(SafeCast.toUint64(block.timestamp)) - released();
     }
 
     /**

@@ -9,6 +9,7 @@ pragma solidity ^0.8.23;
 
 import {IYODA} from "../interfaces/IYODA.sol";
 import {IECOSYSTEM} from "../interfaces/IEcosystem.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20 as TH} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {VestingWallet} from "@openzeppelin/contracts/finance/VestingWallet.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -125,7 +126,7 @@ contract Ecosystem is
         emit AirDrop(winners, amount);
 
         if (len > 5000) revert CustomError("GAS_LIMIT");
-        for (uint256 i = 0; i < len; ++i) {
+        for (uint256 i; i < len; ++i) {
             TH.safeTransfer(ecosystemToken, winners[i], amount);
         }
     }
@@ -182,7 +183,8 @@ contract Ecosystem is
 
         issuedPartnership += amount;
 
-        VestingWallet vestingContract = new VestingWallet(partner, uint64(block.timestamp + 365 days), uint64(730 days));
+        VestingWallet vestingContract =
+            new VestingWallet(partner, SafeCast.toUint64(block.timestamp + 365 days), SafeCast.toUint64(730 days));
 
         vestingContracts[partner] = address(vestingContract);
 
@@ -205,7 +207,7 @@ contract Ecosystem is
         }
 
         if (len > 5000) revert CustomError("GAS_LIMIT");
-        for (uint256 i = 0; i < len; ++i) {
+        for (uint256 i; i < len; ++i) {
             if (winners[i] == address(0)) return false;
             if (winners[i].balance < 0.2e18) return false;
         }

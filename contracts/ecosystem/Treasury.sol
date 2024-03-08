@@ -10,9 +10,9 @@ pragma solidity ^0.8.23;
  */
 
 import {ITREASURY} from "../interfaces/ITreasury.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
@@ -67,8 +67,8 @@ contract Treasury is
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MANAGER_ROLE, timelock);
 
-        _start = uint64(block.timestamp - 219 days);
-        _duration = uint64(1095 days + 219 days);
+        _start = SafeCast.toUint64(block.timestamp - 219 days);
+        _duration = SafeCast.toUint64(1095 days + 219 days);
         version++;
     }
 
@@ -161,7 +161,7 @@ contract Treasury is
      * @return amount of vested ETH
      */
     function releasable() public view virtual returns (uint256) {
-        return vestedAmount(uint64(block.timestamp)) - released();
+        return vestedAmount(SafeCast.toUint64(block.timestamp)) - released();
     }
 
     /**
@@ -170,7 +170,7 @@ contract Treasury is
      * @return amount of vested tokens
      */
     function releasable(address token) public view virtual returns (uint256) {
-        return vestedAmount(token, uint64(block.timestamp)) - released(token);
+        return vestedAmount(token, SafeCast.toUint64(block.timestamp)) - released(token);
     }
 
     /// @inheritdoc UUPSUpgradeable

@@ -1,6 +1,6 @@
 {
   "name": "nebula-protocol",
-  "private": false,
+  "private": true,
   "description": "Nebula Lending Protocol",
   "homepage": "https://github.com/nebula-labs-xyz/nebula-protocol#readme",
   "repository": {
@@ -21,12 +21,12 @@
     "lint:sol-logic": "solhint -c .solhint.json -f table 'contracts/ecosystem/*.sol' 'contracts/lender/*.sol' 'contracts/liquidator/*.sol' 'script/**/*.sol'",
     "lint:sol-tests": "solhint -c .solhint.tests.json -f table 'test/ecosystem/*.sol'",
     "prepare": "husky",
+    "slither:check": "slither . --filter-paths 'contracts/vendor, contracts/mock, contracts/upgrades, node_modules, @openzepellin, @chainlink, @uniswap, @balancer-labs'",
+    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
     "test": "forge test -vvv --ffi",
     "test:integration": "forge test --match-contract Integration -vvv",
     "test:unit": "forge test --match-contract Unit -vvv",
-    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=5000 npm run test:unit",
-    "slither:check": "slither . --filter-paths 'contracts/vendor, contracts/mock, contracts/upgrades, node_modules, @openzepellin, @chainlink, @uniswap, @balancer-labs'",
-    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol"
+    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=5000 npm run test:unit"
   },
   "lint-staged": {
     "./contracts/**/*.sol": "forge fmt && npm run lint:sol-logic",

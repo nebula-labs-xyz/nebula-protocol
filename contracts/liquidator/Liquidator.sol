@@ -84,6 +84,7 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
         SafeERC20.safeTransfer(usdcContract, msg.sender, profit);
         SafeERC20.safeTransfer(govTokenContract, msg.sender, govBalance);
     }
+
     /**
      * @dev receives Balancer flash loan
      * @param tokens IERC20 instances array
@@ -91,7 +92,6 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
      * @param feeAmounts corresponding fee amounts array
      * @param userData borrower address
      */
-
     function receiveFlashLoan(
         IERC20[] memory tokens,
         uint256[] memory amounts,
@@ -137,6 +137,7 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
     function makeFlashLoan(IERC20[] memory tokens, uint256[] memory amounts, bytes memory userData) internal {
         balancerVault.flashLoan(this, tokens, amounts, userData);
     }
+
     /**
      * @dev perform asset swap to USDC
      * @param asset address
@@ -144,7 +145,6 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
      * @param amountOutMin how much to get back in USDC
      * @return amountOut of the swap
      */
-
     function uniswapV3(address asset, uint256 swapAmount, uint256 amountOutMin) internal returns (uint256) {
         uint24 poolFee = 3000;
         address usdc = address(usdcContract);

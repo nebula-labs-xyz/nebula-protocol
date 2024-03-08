@@ -43,6 +43,7 @@ contract Bridge is IBRIDGE, Initializable, PausableUpgradeable, AccessControlUpg
     mapping(uint256 => Transaction) private transactions;
     /// @dev number of UUPS upgrades
     uint8 public version;
+    uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {

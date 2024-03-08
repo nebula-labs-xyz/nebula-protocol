@@ -24,7 +24,9 @@
     "test": "forge test -vvv --ffi",
     "test:integration": "forge test --match-contract Integration -vvv",
     "test:unit": "forge test --match-contract Unit -vvv",
-    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=5000 npm run test:unit"
+    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=5000 npm run test:unit",
+    "slither:check": "slither . --filter-paths 'contracts/vendor, contracts/mock, contracts/upgrades, node_modules, @openzepellin, @chainlink, @uniswap, @balancer-labs'",
+    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol"
   },
   "lint-staged": {
     "./contracts/**/*.sol": "forge fmt && npm run lint:sol-logic",

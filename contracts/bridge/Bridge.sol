@@ -20,17 +20,19 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 contract Bridge is IBRIDGE, Initializable, PausableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
-    /// @dev EnumerableSet of supported tokens
-
-    EnumerableSet.AddressSet internal tokenSet;
-    /// @dev EnumerableSet of supported chains
-    EnumerableSet.UintSet internal chainSet;
     /// @dev AccessControl Pauser Role
     bytes32 internal constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     /// @dev AccessControl Manager Role
     bytes32 internal constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     /// @dev AccessControl Upgrader Role
     bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+
+
+    /// @dev EnumerableSet of supported tokens
+    EnumerableSet.AddressSet internal tokenSet;
+    /// @dev EnumerableSet of supported chains
+    EnumerableSet.UintSet internal chainSet;
+
     /// @dev stores last transaction ID
     uint256 public transactionId;
     /// @dev chain transcation count, by chainId
@@ -65,19 +67,68 @@ contract Bridge is IBRIDGE, Initializable, PausableUpgradeable, AccessControlUpg
         ++version;
     }
 
-    /// @inheritdoc UUPSUpgradeable
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {
-        ++version;
-        emit Upgrade(msg.sender, newImplementation);
+    /**
+     * @dev Adds token to listed tokens.
+     * @param name token name
+     * @param symbol token symbol
+     * @param token address
+     */
+    function listToken(string calldata name, string calldata symbol, address token)
+        external
+        whenNotPaused
+        onlyRole(MANAGER_ROLE)
+    {
+        require(tokenSet.contains(token) != true, "ERR_TOKEN_EXISTS");
+
+        Token storage item = tokens[token];
+        item.name = name;
+        item.symbol = symbol;
+        item.tokenAddress = token;
+
+        require(tokenSet.add(token), "ERR_LISTING_TOKEN");
+
+        emit ListToken(token);
     }
 
-    // /**
-    //  * @notice solidity receive function
-    //  * @dev reverts on receive ETH
-    //  */
-    // receive() external payable {
-    //     if (msg.value > 0) revert("ERR_NO_RECEIVE");
-    // }
+    /**
+     * @dev Removes token from listed tokens.
+     * @param token address
+     */
+    function removeToken(address token) external whenNotPaused onlyRole(MANAGER_ROLE) {
+        require(tokenSet.contains(token), "ERR_NOT_LISTED");
+        delete tokens[token];
+        require(tokenSet.remove(token), "ERR_TOKEN_REMOVE FAILED");
+        emit DelistToken(token);
+    }
+
+    /**
+     * @dev Bridge function BnM.
+     * @param token address
+     * @param to address
+     * @param amount to mint
+     * @param destChainId chianID where to mint
+     * @return transactionId
+     */
+    function bridgeTokens(address token, address to, uint256 amount, uint256 destChainId)
+        external
+        whenNotPaused
+        returns (uint256)
+    {
+        require(tokenSet.contains(token) == true, "ERR_UNLISTED_TOKEN");
+        require(chainSet.contains(destChainId) == true, "ERR_UNKNOWN_CHAIN");
+        IERC20Bridgable tokenContract = IERC20Bridgable(payable(token));
+        require(tokenContract.balanceOf(msg.sender) >= amount, "ERR_INSUFFICIENT_BALANCE");
+        transactionId++;
+        chainCount[destChainId]++;
+
+        transactions[transactionId] = Transaction(msg.sender, to, token, amount, block.timestamp, destChainId);
+
+        emit Bridged(transactionId, msg.sender, to, token, amount, destChainId);
+        TH.safeTransferFrom(tokenContract, msg.sender, address(this), amount);
+        tokenContract.burn(amount);
+
+        return transactionId;
+    }
 
     /**
      * @dev Pause contract.
@@ -191,66 +242,12 @@ contract Bridge is IBRIDGE, Initializable, PausableUpgradeable, AccessControlUpg
         return transactions[tranId];
     }
 
-    /**
-     * @dev Adds token to listed tokens.
-     * @param name token name
-     * @param symbol token symbol
-     * @param token address
-     */
-    function listToken(string calldata name, string calldata symbol, address token)
-        external
-        whenNotPaused
-        onlyRole(MANAGER_ROLE)
-    {
-        require(tokenSet.contains(token) != true, "ERR_TOKEN_EXISTS");
 
-        Token storage item = tokens[token];
-        item.name = name;
-        item.symbol = symbol;
-        item.tokenAddress = token;
 
-        require(tokenSet.add(token), "ERR_LISTING_TOKEN");
 
-        emit ListToken(token);
-    }
-
-    /**
-     * @dev Removes token from listed tokens.
-     * @param token address
-     */
-    function removeToken(address token) external whenNotPaused onlyRole(MANAGER_ROLE) {
-        require(tokenSet.contains(token), "ERR_NOT_LISTED");
-        delete tokens[token];
-        require(tokenSet.remove(token), "ERR_TOKEN_REMOVE FAILED");
-        emit DelistToken(token);
-    }
-
-    /**
-     * @dev Bridge function BnM.
-     * @param token address
-     * @param to address
-     * @param amount to mint
-     * @param destChainId chianID where to mint
-     * @return transactionId
-     */
-    function bridgeTokens(address token, address to, uint256 amount, uint256 destChainId)
-        external
-        whenNotPaused
-        returns (uint256)
-    {
-        require(tokenSet.contains(token) == true, "ERR_UNLISTED_TOKEN");
-        require(chainSet.contains(destChainId) == true, "ERR_UNKNOWN_CHAIN");
-        IERC20Bridgable tokenContract = IERC20Bridgable(payable(token));
-        require(tokenContract.balanceOf(msg.sender) >= amount, "ERR_INSUFFICIENT_BALANCE");
-        transactionId++;
-        chainCount[destChainId]++;
-
-        transactions[transactionId] = Transaction(msg.sender, to, token, amount, block.timestamp, destChainId);
-
-        emit Bridged(transactionId, msg.sender, to, token, amount, destChainId);
-        TH.safeTransferFrom(tokenContract, msg.sender, address(this), amount);
-        tokenContract.burn(amount);
-
-        return transactionId;
+    /// @inheritdoc UUPSUpgradeable
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {
+        ++version;
+        emit Upgrade(msg.sender, newImplementation);
     }
 }

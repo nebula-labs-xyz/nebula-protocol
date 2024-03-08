@@ -8,6 +8,21 @@ interface ITEAMMANAGER {
     error CustomError(string msg);
 
     /**
+     * @dev Pause contract.
+     */
+    function pause() external;
+
+    /**
+     * @dev Unpause contract.
+     */
+    function unpause() external;
+
+    /**
+     * @dev Create new vesting contract for a team member.
+     */
+    function addTeamMember(address beneficiary, uint256 amount) external;
+
+    /**
      * @dev Getter for the UUPS version, incremented each time an upgrade occurs.
      */
     function version() external view returns (uint8);
@@ -31,19 +46,4 @@ interface ITEAMMANAGER {
      * @dev Total amount of token allocated so far.
      */
     function totalAllocation() external view returns (uint256);
-
-    /**
-     * @dev Pause contract.
-     */
-    function pause() external;
-
-    /**
-     * @dev Unpause contract.
-     */
-    function unpause() external;
-
-    /**
-     * @dev Create new vesting contract for a team member.
-     */
-    function addTeamMember(address beneficiary, uint256 amount) external;
 }

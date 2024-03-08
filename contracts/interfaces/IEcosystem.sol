@@ -9,52 +9,6 @@ interface IECOSYSTEM {
     event AddPartner(address indexed account, address indexed vesting, uint256 amount);
 
     error CustomError(string msg);
-
-    /**
-     * @dev Getter for the starting reward supply.
-     */
-    function rewardSupply() external view returns (uint256);
-
-    /**
-     * @dev Getter for the max one time reward amount.
-     */
-    function maxReward() external view returns (uint256);
-
-    /**
-     * @dev Getter for the starting airdrop supply.
-     */
-    function airdropSupply() external view returns (uint256);
-
-    /**
-     * @dev Getter for the starting partnership supply.
-     */
-    function partnershipSupply() external view returns (uint256);
-
-    /**
-     * @dev Getter for the issued amount of tokens issued as reward.
-     */
-    function issuedReward() external view returns (uint256);
-
-    /**
-     * @dev Getter for the issued amount of tokens airdropped.
-     */
-    function issuedAirDrop() external view returns (uint256);
-
-    /**
-     * @dev Getter for the issued amount of tokens allocated to partners.
-     */
-    function issuedPartnership() external view returns (uint256);
-
-    /**
-     * @dev Getter for the UUPS version.
-     */
-    function version() external view returns (uint8);
-
-    /**
-     * @dev Getter for the vesting contract addresses recorded by the AddPartner function.
-     */
-    function vestingContracts(address) external view returns (address);
-
     /**
      * @dev Pause contract.
      */
@@ -99,4 +53,49 @@ interface IECOSYSTEM {
      * Emits a {AddPartner} event.
      */
     function addPartner(address account, uint256 amount) external;
+    
+    /**
+     * @dev Getter for the starting reward supply.
+     */
+    function rewardSupply() external view returns (uint256);
+
+    /**
+     * @dev Getter for the max one time reward amount.
+     */
+    function maxReward() external view returns (uint256);
+
+    /**
+     * @dev Getter for the starting airdrop supply.
+     */
+    function airdropSupply() external view returns (uint256);
+
+    /**
+     * @dev Getter for the starting partnership supply.
+     */
+    function partnershipSupply() external view returns (uint256);
+
+    /**
+     * @dev Getter for the issued amount of tokens issued as reward.
+     */
+    function issuedReward() external view returns (uint256);
+
+    /**
+     * @dev Getter for the issued amount of tokens airdropped.
+     */
+    function issuedAirDrop() external view returns (uint256);
+
+    /**
+     * @dev Getter for the issued amount of tokens allocated to partners.
+     */
+    function issuedPartnership() external view returns (uint256);
+
+    /**
+     * @dev Getter for the UUPS version.
+     */
+    function version() external view returns (uint8);
+
+    /**
+     * @dev Getter for the vesting contract addresses recorded by the AddPartner function.
+     */
+    function vestingContracts(address) external view returns (address);
 }

@@ -2,10 +2,6 @@
 pragma solidity ^0.8.23;
 
 interface IINVESTOR {
-    event RoundClosed(uint8 round);
-    event Invest(uint8 round, address indexed src, uint256 amount);
-    event Upgrade(address indexed src, address indexed implementation);
-
     struct Investment {
         uint256 etherAmount;
         uint256 tokenAmount;
@@ -21,6 +17,10 @@ interface IINVESTOR {
         uint8 closed;
     }
 
+    event RoundClosed(uint8 round);
+    event Invest(uint8 round, address indexed src, uint256 amount);
+    event Upgrade(address indexed src, address indexed implementation);
+
     error CustomError(string msg);
 
     receive() external payable;
@@ -28,12 +28,6 @@ interface IINVESTOR {
     function pause() external;
 
     function unpause() external;
-
-    function getCurrentRound() external view returns (uint8);
-
-    function getRoundInfo(uint8 round) external view returns (Round memory);
-
-    function getMinInvestAmount(uint8 round) external view returns (uint256);
 
     function createRound(uint64 start, uint64 duration, uint256 etherTarget, uint256 tokenAlloc) external;
 
@@ -46,4 +40,10 @@ interface IINVESTOR {
     function closeRound(uint8 round) external;
 
     function cancelRound(uint8 round) external;
+
+    function getCurrentRound() external view returns (uint8);
+
+    function getRoundInfo(uint8 round) external view returns (Round memory);
+
+    function getMinInvestAmount(uint8 round) external view returns (uint256);
 }

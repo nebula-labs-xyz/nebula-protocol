@@ -185,9 +185,9 @@ contract InvestmentManager is
             revert CustomError("ROUND_STILL_OPEN");
         }
 
-        deployVestingContracts(round_);
         round++;
-
+        deployVestingContracts(round_);
+        
         wethContract.withdraw(current.etherInvested);
 
         (bool success,) = treasury.call{value: current.etherInvested}("");
@@ -213,14 +213,15 @@ contract InvestmentManager is
 
         rounds.pop();
         supply -= current.tokenAllocation;
-        withdrawTokens(current.tokenAllocation);
-
+        
         for (uint64 i = 0; i < len; ++i) {
             Investment memory item = investorAllocations[round_][investors[i]];
             totalAllocation -= item.tokenAmount;
             investorAllocations[round_][investors[i]] = Investment(0, 0);
             TH.safeTransfer(IERC20(address(wethContract)), investors[i], item.etherAmount);
         }
+
+        withdrawTokens(current.tokenAllocation);
     }
 
     /**

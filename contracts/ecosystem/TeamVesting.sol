@@ -41,9 +41,9 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      * @dev Sets the owner to beneficiary address, the start timestamp and the
      * vesting duration of the vesting contract.
      */
-    constructor(address token, address timelock, address initialOwner, uint64 startTimestamp, uint64 durationSeconds)
+    constructor(address token, address timelock, address beneficiary, uint64 startTimestamp, uint64 durationSeconds) // solhint-disable-line
         payable
-        Ownable(initialOwner)
+        Ownable(beneficiary)
     {
         _token = token;
         _timelock = timelock;

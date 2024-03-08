@@ -1,14 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
+/**
+ * @title Vesting Interface
+ * @author Nebula Labs Inc
+ * @custom:security-contact security@nebula-labs.xyz
+ */
 
 interface IVESTING {
     /// @notice  event emmited when contract cancelled
+    /// @param amount tokens returned
     event Cancelled(uint256 amount);
 
-    /// @notice  event emmited when tokens released
+    /**
+     * @dev ERC20Released Event
+     * @param token address
+     * @param amount released
+     */
     event ERC20Released(address indexed token, uint256 amount);
 
-    /// @notice  Custom error used for errors
+    /**
+     * @dev Custom Error.
+     * @param msg error desription
+     */
     error CustomError(string msg);
 
     /// @dev Getter for the start timestamp

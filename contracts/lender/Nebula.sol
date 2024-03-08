@@ -107,14 +107,6 @@ contract Nebula is
         _disableInitializers();
     }
 
-    // /**
-    //  * @notice solidity receive function
-    //  * @dev reverts on receive ETH
-    //  */
-    // receive() external payable {
-    //     if (msg.value > 0) revert("ERR_NO_RECEIVE");
-    // }
-
     /**
      * @dev Initializes the UUPS contract
      * @param usdc USDC address
@@ -216,7 +208,7 @@ contract Nebula is
         uint256 supply = totalSupply();
         uint256 value = (amount * total) / supply;
         uint256 baseAmount = (amount * totalBase) / (supply - fee);
-        assert(baseAmount <= value - fee);
+
         totalBase -= baseAmount;
         withdrawnLiquidity += value;
         supplyInterestAccrueIndex += value - baseAmount;

@@ -42,13 +42,13 @@ contract Bridge is
     /// @dev stores last transaction ID
     uint256 public transactionId;
     /// @dev chain transcation count, by chainId
-    mapping(uint256 => uint256) public chainCount;
+    mapping(uint256 chainId => uint256 count) public chainCount;
     /// @dev Chain object by chainId mapping
-    mapping(uint256 => Chain) public chains;
+    mapping(uint256 chainId => Chain) public chains;
     /// @dev supported tokens mapping
-    mapping(address => Token) public tokens;
+    mapping(address asset => Token) public tokens;
     /// @dev Transaction by ID mapping
-    mapping(uint256 => Transaction) private transactions;
+    mapping(uint256 id => Transaction) private transactions;
     /// @dev number of UUPS upgrades
     uint8 public version;
     uint256[50] private __gap;

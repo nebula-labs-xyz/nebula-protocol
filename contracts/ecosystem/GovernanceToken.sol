@@ -84,6 +84,7 @@ contract GovernanceToken is
         __UUPSUpgradeable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, guardian);
+        _grantRole(PAUSER_ROLE, guardian);
         initialSupply = 50_000_000 ether;
         maxBridge = 10_000 ether;
         version++;

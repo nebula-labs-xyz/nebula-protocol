@@ -55,14 +55,14 @@ contract InvestmentManager is
     /// @dev Round object array
     Round[] public rounds;
     /// @dev Investor to round mapping
-    mapping(uint8 => address[]) internal investors_;
+    mapping(uint8 round_ => address[] participans) internal investors_;
     /// @dev tracks investor position in the investors_ array mapping above
     /// @dev in order to be able to cancel investments without looping, just like EnumarableSet contract
-    mapping(uint8 => mapping(address => uint256)) internal ipos;
+    mapping(uint8 round_ => mapping(address src => uint256 pos)) internal ipos;
     /// @dev Vesting contract addresses for investors per round
-    mapping(uint8 => mapping(address => address)) public vestingContracts;
+    mapping(uint8 round_ => mapping(address src => address vesting)) public vestingContracts;
     /// @dev Tracks investor allocations per round
-    mapping(uint8 => mapping(address => Investment)) public investorAllocations;
+    mapping(uint8 round_ => mapping(address src => Investment)) public investorAllocations;
     uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor

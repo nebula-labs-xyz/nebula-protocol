@@ -49,14 +49,16 @@ contract NebulaV2 is
     bytes32 internal constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     /// @dev AccessControl Upgrader Role
     bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+
+    /// @dev USDC token instance
+    IERC20 internal usdcInstance;
+    /// @dev governance token instance
+    IERC20 internal tokenInstance;
+    /// @dev ecosystem contract instance
+    IECOSYSTEM internal ecosystemInstance;
+
     /// @dev EnumerableSet of listed collateral assets
     EnumerableSet.AddressSet internal listedAsset;
-    /// @dev USDC token instance
-    IERC20 internal baseContract;
-    /// @dev governance token instance
-    IERC20 internal tokenContract;
-    /// @dev ecosystem contract instance
-    IECOSYSTEM internal ecosystemContract;
     /// @dev total borrow amount in USDC
     uint256 public totalBorrow;
     /// @dev total amount of liquidity in USDC
@@ -86,21 +88,21 @@ contract NebulaV2 is
     /// @dev timelock address
     address public timelock;
     /// @dev collateral asset Info mapping
-    mapping(address => Asset) internal assetInfo;
+    mapping(address asset => Asset) internal assetInfo;
     /// @dev borrower principal mapping
-    mapping(address => uint256) internal loans;
+    mapping(address src => uint256 amount) internal loans;
     /// @dev borrower last interest accrual timestamp mapping
-    mapping(address => uint256) internal loanAccrueTimeIndex;
+    mapping(address src => uint256 time) internal loanAccrueTimeIndex;
     /// @dev LPs last interest accrual timestamp mapping
-    mapping(address => uint256) internal liquidityAccrueTimeIndex;
+    mapping(address src => uint256 time) internal liquidityAccrueTimeIndex;
     /// @dev total collateral amounts by asset mapping
-    mapping(address => uint256) internal totalCollateral;
+    mapping(address asset => uint256 amount) internal totalCollateral;
     /// @dev borrower address position mapping used to remove userCollateralAssets when needed
-    mapping(address => uint256) internal ucaPos;
+    mapping(address src => uint256 pos) internal ucaPos;
     /// @dev borrower collateral assets address mapping
-    mapping(address => address[]) internal userCollateralAssets;
+    mapping(address src => address[] assets) internal userCollateralAssets;
     /// @dev borrower collateral assets (by user address, by asset address) mapping
-    mapping(address => mapping(address => uint256)) internal collateral;
+    mapping(address src => mapping(address asset => uint256 amount)) internal collateral;
     uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -134,9 +136,9 @@ contract NebulaV2 is
         _grantRole(PAUSER_ROLE, guardian);
         _grantRole(MANAGER_ROLE, timelock_);
 
-        baseContract = IERC20(usdc);
-        tokenContract = IERC20(govToken);
-        ecosystemContract = IECOSYSTEM(payable(ecosystem));
+        usdcInstance = IERC20(usdc);
+        tokenInstance = IERC20(govToken);
+        ecosystemInstance = IECOSYSTEM(payable(ecosystem));
         treasury = treasury_;
         timelock = timelock_;
 
@@ -168,8 +170,8 @@ contract NebulaV2 is
      * @param amount to be supplied in USDC (6 decimals)
      */
     function supplyLiquidity(uint256 amount) external nonReentrant {
-        require(baseContract.balanceOf(msg.sender) >= amount, "ERR_INSUFFICIENT_BALANCE");
-        uint256 total = baseContract.balanceOf(address(this)) + totalBorrow;
+        require(usdcInstance.balanceOf(msg.sender) >= amount, "ERR_INSUFFICIENT_BALANCE");
+        uint256 total = usdcInstance.balanceOf(address(this)) + totalBorrow;
         if (total == 0) total = WAD;
         uint256 supply = totalSupply();
         uint256 value = (amount * supply) / total;
@@ -182,7 +184,7 @@ contract NebulaV2 is
         _mint(msg.sender, value);
 
         emit SupplyLiquidity(msg.sender, amount);
-        TH.safeTransferFrom(baseContract, msg.sender, address(this), amount);
+        TH.safeTransferFrom(usdcInstance, msg.sender, address(this), amount);
     }
 
     /**
@@ -196,7 +198,7 @@ contract NebulaV2 is
 
         uint256 fee;
         uint256 target = (amount * baseProfitTarget) / WAD; //1% commission
-        uint256 total = baseContract.balanceOf(address(this)) + totalBorrow;
+        uint256 total = usdcInstance.balanceOf(address(this)) + totalBorrow;
 
         if (total >= totalBase + target) {
             // this guarantees the totalBase will always remain >= 0
@@ -218,7 +220,7 @@ contract NebulaV2 is
         _burn(msg.sender, amount);
 
         emit Exchange(msg.sender, amount, value);
-        TH.safeTransfer(baseContract, msg.sender, value);
+        TH.safeTransfer(usdcInstance, msg.sender, value);
     }
 
     /**
@@ -245,7 +247,7 @@ contract NebulaV2 is
         loans[msg.sender] = amount + balance;
 
         emit Borrow(msg.sender, amount);
-        TH.safeTransfer(baseContract, msg.sender, amount);
+        TH.safeTransfer(usdcInstance, msg.sender, amount);
     }
 
     /**
@@ -355,14 +357,14 @@ contract NebulaV2 is
      * Emits a {Liquidated} event.
      */
     function liquidate(address src) external nonReentrant whenNotPaused {
-        require(tokenContract.balanceOf(msg.sender) >= liquidatorThreshold, "ERR_NOT_LIQUIDATOR");
+        require(tokenInstance.balanceOf(msg.sender) >= liquidatorThreshold, "ERR_NOT_LIQUIDATOR");
         require(isLiquidatable(src), "ERR_NOT_LIQUIDATABLE");
         uint256 balance = getAccruedDebt(src);
         uint256 liquidationFee = (balance * baseProfitTarget) / WAD; //1% commission
         loanInterestAccrueIndex += balance - loans[src];
         delete loans[src];
 
-        TH.safeTransferFrom(baseContract, msg.sender, address(this), balance + liquidationFee);
+        TH.safeTransferFrom(usdcInstance, msg.sender, address(this), balance + liquidationFee);
 
         address[] memory assets = userCollateralAssets[src];
         uint256 len = assets.length;
@@ -660,7 +662,7 @@ contract NebulaV2 is
         uint256 fee;
         uint256 supply = totalSupply();
         uint256 target = (supply * baseProfitTarget) / WAD; //1% commission
-        uint256 total = baseContract.balanceOf(address(this)) + totalBorrow;
+        uint256 total = usdcInstance.balanceOf(address(this)) + totalBorrow;
         if (total >= totalBase + target) {
             fee = target;
         }
@@ -765,7 +767,7 @@ contract NebulaV2 is
 
     /// @inheritdoc ERC20Upgradeable
     function decimals() public view virtual override(ERC20Upgradeable, INEBULA) returns (uint8) {
-        return IERC20Metadata(address(baseContract)).decimals();
+        return IERC20Metadata(address(usdcInstance)).decimals();
     }
 
     /// @inheritdoc ERC20Upgradeable
@@ -792,7 +794,7 @@ contract NebulaV2 is
      */
     function repayInternal(uint256 amount) internal {
         emit Repay(msg.sender, amount);
-        TH.safeTransferFrom(baseContract, msg.sender, address(this), amount);
+        TH.safeTransferFrom(usdcInstance, msg.sender, address(this), amount);
     }
 
     /**
@@ -806,11 +808,11 @@ contract NebulaV2 is
         if (rewardable) {
             uint256 duration = block.timestamp - liquidityAccrueTimeIndex[msg.sender];
             uint256 reward = (targetReward * duration) / rewardInterval;
-            uint256 maxReward = ecosystemContract.maxReward();
+            uint256 maxReward = ecosystemInstance.maxReward();
             uint256 target = reward > maxReward ? maxReward : reward;
             delete liquidityAccrueTimeIndex[msg.sender];
             emit Reward(msg.sender, target);
-            ecosystemContract.reward(msg.sender, target);
+            ecosystemInstance.reward(msg.sender, target);
         }
     }
 

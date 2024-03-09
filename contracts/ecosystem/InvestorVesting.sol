@@ -18,15 +18,15 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 contract InvestorVesting is IVESTING, Context, Ownable2Step {
     /// @dev token contract instance
-    IERC20 internal tokenContract;
-    /// @dev amount of tokens released
-    mapping(address token => uint256) private _erc20Released;
+    IERC20 private immutable TOKEN_INSTANCE;
     /// @dev start timestamp
-    uint64 private _start;
+    uint64 private immutable START;
     /// @dev duration seconds
-    uint64 private _duration;
+    uint64 private immutable DURATION;
     /// @dev token address
-    address private _token;
+    address private immutable TOKEN;
+    /// @dev amount of tokens released
+    mapping(address token => uint256 amount) private _erc20Released;
 
     /**
      * @dev Sets the owner to beneficiary address, the start timestamp and the
@@ -38,10 +38,10 @@ contract InvestorVesting is IVESTING, Context, Ownable2Step {
         uint64 startTimestamp,
         uint64 durationSeconds
     ) payable Ownable(beneficiary) {
-        _token = token;
-        _start = startTimestamp;
-        _duration = durationSeconds;
-        tokenContract = IERC20(token);
+        TOKEN = token;
+        START = startTimestamp;
+        DURATION = durationSeconds;
+        TOKEN_INSTANCE = IERC20(token);
     }
 
     /**
@@ -51,9 +51,9 @@ contract InvestorVesting is IVESTING, Context, Ownable2Step {
      */
     function release() public virtual {
         uint256 amount = releasable();
-        _erc20Released[_token] += amount;
-        emit ERC20Released(_token, amount);
-        SafeERC20.safeTransfer(tokenContract, owner(), amount);
+        _erc20Released[TOKEN] += amount;
+        emit ERC20Released(TOKEN, amount);
+        SafeERC20.safeTransfer(TOKEN_INSTANCE, owner(), amount);
     }
 
     /**
@@ -61,7 +61,7 @@ contract InvestorVesting is IVESTING, Context, Ownable2Step {
      * @return start timestamp
      */
     function start() public view virtual returns (uint256) {
-        return _start;
+        return START;
     }
 
     /**
@@ -69,7 +69,7 @@ contract InvestorVesting is IVESTING, Context, Ownable2Step {
      * @return duration seconds
      */
     function duration() public view virtual returns (uint256) {
-        return _duration;
+        return DURATION;
     }
 
     /**
@@ -85,7 +85,7 @@ contract InvestorVesting is IVESTING, Context, Ownable2Step {
      * @return amount of tokens released so far
      */
     function released() public view virtual returns (uint256) {
-        return _erc20Released[_token];
+        return _erc20Released[TOKEN];
     }
 
     /**
@@ -102,7 +102,7 @@ contract InvestorVesting is IVESTING, Context, Ownable2Step {
      * @return amount vested
      */
     function vestedAmount(uint64 timestamp) internal view virtual returns (uint256) {
-        return _vestingSchedule(tokenContract.balanceOf(address(this)) + released(), timestamp);
+        return _vestingSchedule(TOKEN_INSTANCE.balanceOf(address(this)) + released(), timestamp);
     }
 
     /**
@@ -117,8 +117,7 @@ contract InvestorVesting is IVESTING, Context, Ownable2Step {
             return 0;
         } else if (timestamp >= end()) {
             return totalAllocation;
-        } else {
-            return (totalAllocation * (timestamp - start())) / duration();
         }
+        return (totalAllocation * (timestamp - start())) / duration();
     }
 }

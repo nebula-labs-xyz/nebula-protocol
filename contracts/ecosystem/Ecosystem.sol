@@ -28,18 +28,18 @@ contract Ecosystem is
     UUPSUpgradeable
 {
     /// @dev AccessControl Burner Role
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+    bytes32 internal constant BURNER_ROLE = keccak256("BURNER_ROLE");
     /// @dev AccessControl Pauser Role
-    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bytes32 internal constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     /// @dev AccessControl Upgrader Role
-    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     /// @dev AccessControl Rewarder Role
-    bytes32 public constant REWARDER_ROLE = keccak256("REWARDER_ROLE");
+    bytes32 internal constant REWARDER_ROLE = keccak256("REWARDER_ROLE");
     /// @dev AccessControl Manager Role
-    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    bytes32 internal constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     /// @dev governance token instance
-    IYODA public ecosystemToken;
+    IYODA internal tokenInstance;
     /// @dev starting reward supply
     uint256 public rewardSupply;
     /// @dev maximal one time reward amount
@@ -59,7 +59,7 @@ contract Ecosystem is
     /// @dev number of UUPS upgrades
     uint8 public version;
     /// @dev Addresses of vesting contracts issued to partners
-    mapping(address => address) public vestingContracts;
+    mapping(address src => address vesting) public vestingContracts;
     uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -81,8 +81,8 @@ contract Ecosystem is
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(PAUSER_ROLE, pauser);
 
-        ecosystemToken = IYODA(payable(token));
-        uint256 initialSupply = ecosystemToken.initialSupply();
+        tokenInstance = IYODA(payable(token));
+        uint256 initialSupply = tokenInstance.initialSupply();
         rewardSupply = (initialSupply * 26) / 100;
         airdropSupply = (initialSupply * 10) / 100;
         partnershipSupply = (initialSupply * 8) / 100;
@@ -128,7 +128,7 @@ contract Ecosystem is
 
         if (len > 5000) revert CustomError("GAS_LIMIT");
         for (uint256 i; i < len; ++i) {
-            TH.safeTransfer(ecosystemToken, winners[i], amount);
+            TH.safeTransfer(tokenInstance, winners[i], amount);
         }
     }
 
@@ -146,7 +146,7 @@ contract Ecosystem is
 
         issuedReward += amount;
         emit Reward(to, amount);
-        TH.safeTransfer(ecosystemToken, to, amount);
+        TH.safeTransfer(tokenInstance, to, amount);
     }
 
     /**
@@ -162,7 +162,7 @@ contract Ecosystem is
         if (amount > maxBurn) revert CustomError("MAX_BURN_LIMIT");
         rewardSupply -= amount;
         emit Burn(amount);
-        ecosystemToken.burn(amount);
+        tokenInstance.burn(amount);
     }
 
     /**
@@ -190,16 +190,16 @@ contract Ecosystem is
         vestingContracts[partner] = address(vestingContract);
 
         emit AddPartner(partner, address(vestingContract), amount);
-        TH.safeTransfer(ecosystemToken, address(vestingContract), amount);
+        TH.safeTransfer(tokenInstance, address(vestingContract), amount);
     }
 
     /**
      * @dev Performs Airdrop verification.
      * @param winners address array
      * @param amount token amount per winner
-     * @return success boolean
+     * @return verified boolean
      */
-    function verifyAirdrop(address[] calldata winners, uint256 amount) external view returns (bool) {
+    function verifyAirdrop(address[] calldata winners, uint256 amount) external view returns (bool verified) {
         if (amount < 1 ether) revert CustomError("INVALID_AMOUNT");
         uint256 len = winners.length;
 
@@ -209,10 +209,9 @@ contract Ecosystem is
 
         if (len > 5000) revert CustomError("GAS_LIMIT");
         for (uint256 i; i < len; ++i) {
-            if (winners[i] == address(0)) return false;
-            if (winners[i].balance < 0.2e18) return false;
+            if (winners[i].balance < 0.2e18) verified = false;
         }
-        return true;
+        verified = true;
     }
 
     /// @inheritdoc UUPSUpgradeable

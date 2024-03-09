@@ -39,14 +39,14 @@ contract TeamManager is
     uint256 public supply;
     /// @dev amount of tokens allocated so far
     uint256 public totalAllocation;
-    /// @dev token allocations to team members
-    mapping(address => uint256) public allocations;
-    /// @dev vesting contract addresses for team members
-    mapping(address => address) public vestingContracts;
     /// @dev timelock address
     address public timelock;
     /// @dev number of UUPS upgrades
     uint8 public version;
+    /// @dev token allocations to team members
+    mapping(address src => uint256 amount) public allocations;
+    /// @dev vesting contract addresses for team members
+    mapping(address src => address vesting) public vestingContracts;
     uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor

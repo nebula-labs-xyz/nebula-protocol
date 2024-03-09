@@ -36,14 +36,14 @@ contract TreasuryV2 is
     bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     /// @dev ETH amount released so far
     uint256 private _released;
-    /// @dev token amounts released so far
-    mapping(address token => uint256) private _erc20Released;
     /// @dev start timestamp
     uint64 private _start;
     /// @dev duration seconds
     uint64 private _duration;
     /// @dev UUPS version
     uint8 public version;
+    /// @dev token amounts released so far
+    mapping(address token => uint256) private _erc20Released;
     uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor

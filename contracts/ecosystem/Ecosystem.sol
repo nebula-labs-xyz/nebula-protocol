@@ -127,9 +127,13 @@ contract Ecosystem is
         emit AirDrop(winners, amount);
 
         // if (len > 5000) revert CustomError("GAS_LIMIT");
-        require(len <= 5000, "GAS_LIMIT");
-        for (uint256 i; i < len; ++i) {
-            TH.safeTransfer(tokenInstance, winners[i], amount);
+        // require(len <= 5000, "GAS_LIMIT");
+        if (len <= 5000) {
+            for (uint256 i; i < len; ++i) {
+                TH.safeTransfer(tokenInstance, winners[i], amount);
+            }
+        } else {
+            revert CustomError("GAS_LIMIT");
         }
     }
 
@@ -209,10 +213,15 @@ contract Ecosystem is
         }
 
         // if (len > 5000) revert CustomError("GAS_LIMIT");
-        require(len <= 5000, "GAS_LIMIT");
-        for (uint256 i; i < len; ++i) {
-            if (winners[i].balance < 0.2e18) verified = false;
+        // require(len <= 5000, "GAS_LIMIT");
+        if (len <= 5000) {
+            for (uint256 i; i < len; ++i) {
+                if (winners[i].balance < 0.2e18) verified = false;
+            }
+        } else {
+            revert CustomError("GAS_LIMIT");
         }
+
         verified = true;
     }
 

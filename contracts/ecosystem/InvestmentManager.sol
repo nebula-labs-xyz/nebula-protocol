@@ -216,14 +216,18 @@ contract InvestmentManager is
 
         rounds.pop();
         supply -= current.tokenAllocation;
-        for (uint64 i; i < len; ++i) {
-            Investment memory item = investorAllocations[round_][investors[i]];
-            totalAllocation -= item.tokenAmount;
-            investorAllocations[round_][investors[i]] = Investment(0, 0);
-            TH.safeTransfer(IERC20(address(wethContract)), investors[i], item.etherAmount);
-        }
+        if (len <= 50) {
+            for (uint64 i; i < len; ++i) {
+                Investment memory item = investorAllocations[round_][investors[i]];
+                totalAllocation -= item.tokenAmount;
+                investorAllocations[round_][investors[i]] = Investment(0, 0);
+                TH.safeTransfer(IERC20(address(wethContract)), investors[i], item.etherAmount);
+            }
 
-        withdrawTokens(current.tokenAllocation);
+            withdrawTokens(current.tokenAllocation);
+        } else {
+            revert CustomError("GAS_LIMIT");
+        }
     }
 
     /**
@@ -306,16 +310,20 @@ contract InvestmentManager is
         uint256 len = investors.length;
         address[] memory temp;
         investors = temp;
-        for (uint256 i; i < len; ++i) {
-            uint256 alloc = investorAllocations[round][investors[i]].tokenAmount;
-            InvestorVesting vestingContract = new InvestorVesting(
-                address(ecosystemToken),
-                investors[i],
-                SafeCast.toUint64(block.timestamp + 365 days), // cliff timestamp
-                SafeCast.toUint64(730 days) // duration after cliff
-            );
-            vestingContracts[round][investors[i]] = address(vestingContract);
-            TH.safeTransfer(ecosystemToken, address(vestingContract), alloc);
+        if (len <= 50) {
+            for (uint256 i; i < len; ++i) {
+                uint256 alloc = investorAllocations[round][investors[i]].tokenAmount;
+                InvestorVesting vestingContract = new InvestorVesting(
+                    address(ecosystemToken),
+                    investors[i],
+                    SafeCast.toUint64(block.timestamp + 365 days), // cliff timestamp
+                    SafeCast.toUint64(730 days) // duration after cliff
+                );
+                vestingContracts[round][investors[i]] = address(vestingContract);
+                TH.safeTransfer(ecosystemToken, address(vestingContract), alloc);
+            }
+        } else {
+            revert CustomError("GAS_LIMIT");
         }
     }
 

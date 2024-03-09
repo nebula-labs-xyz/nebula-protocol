@@ -34,7 +34,7 @@ interface IINVESTOR {
         uint256 participants;
         uint64 start;
         uint64 end;
-        uint8 closed;
+        uint32 closed;
     }
 
     /**
@@ -44,10 +44,28 @@ interface IINVESTOR {
     event Initialized(address indexed src);
 
     /**
+     * @dev RoundComplete Event.
+     * @param round, number
+     */
+    event RoundComplete(uint32 round);
+
+    /**
      * @dev RoundClosed Event.
      * @param round, number
      */
-    event RoundClosed(uint8 round);
+    event RoundClosed(uint32 round);
+
+    /**
+     * @dev RoundCancelled Event.
+     * @param round, number
+     */
+    event RoundCancelled(uint32 round);
+
+    /**
+     * @dev DeployVesting Event.
+     * @param round, number
+     */
+    event DeployVesting(uint32 round, address indexed to, address indexed vesting, uint256 amount);
 
     /**
      * @dev Invest Event
@@ -57,7 +75,7 @@ interface IINVESTOR {
      * @param ethTarget, amount
      * @param tokenAlloc, amount
      */
-    event CreateRound(uint8 round, uint64 start, uint64 duration, uint256 ethTarget, uint256 tokenAlloc);
+    event CreateRound(uint32 round, uint64 start, uint64 duration, uint256 ethTarget, uint256 tokenAlloc);
 
     /**
      * @dev Cancel Investment Event
@@ -65,7 +83,7 @@ interface IINVESTOR {
      * @param src, address
      * @param amount, amount
      */
-    event CancelInvestment(uint8 round, address indexed src, uint256 amount);
+    event CancelInvestment(uint32 round, address indexed src, uint256 amount);
 
     /**
      * @dev Invest Event
@@ -73,7 +91,7 @@ interface IINVESTOR {
      * @param src, address
      * @param amount, amount
      */
-    event Invest(uint8 round, address indexed src, uint256 amount);
+    event Invest(uint32 round, address indexed src, uint256 amount);
 
     /**
      * @dev Upgrade Event.
@@ -111,50 +129,50 @@ interface IINVESTOR {
      * @dev Processes ETH investment into a round.
      * @param round round number in question
      */
-    function investEther(uint8 round) external payable;
+    function investEther(uint32 round) external payable;
 
     /**
      * @dev Processes WETH investment into a round.
      * @param round round number in question
      * @param amount amount of ETH to invest
      */
-    function investWETH(uint8 round, uint256 amount) external;
+    function investWETH(uint32 round, uint256 amount) external;
 
     /**
      * @dev Allows investor to get a rufund from an open round.
      * @param round round number in question
      */
-    function cancelInvestment(uint8 round) external;
+    function cancelInvestment(uint32 round) external;
 
     /**
      * @dev Closes an investment round after the round target has been reached.
      * @param round number in question
      */
-    function closeRound(uint8 round) external;
+    function closeRound(uint32 round) external;
 
     /**
      * @dev Allows manager to cancel a round if need be, and issues refunds (WETH) to investors.
      * @param round round number in question
      */
-    function cancelRound(uint8 round) external;
+    function cancelRound(uint32 round) external;
 
     /**
      * @dev Getter ruturns the curretly active round.
      * @return current round number
      */
-    function getCurrentRound() external view returns (uint8);
+    function getCurrentRound() external view returns (uint32);
 
     /**
      * @dev Getter ruturns the curretly active round details: Round object.
      * @param round round number in question
      * @return returns Round object
      */
-    function getRoundInfo(uint8 round) external view returns (Round memory);
+    function getRoundInfo(uint32 round) external view returns (Round memory);
 
     /**
      * @dev Getter ruturns the round's min invest amount.
      * @param round round number in question
      * @return returns min invest amount (ETH)
      */
-    function getMinInvestAmount(uint8 round) external view returns (uint256);
+    function getMinInvestAmount(uint32 round) external view returns (uint256);
 }

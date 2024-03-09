@@ -49,20 +49,20 @@ contract InvestmentManager is
     /// @dev amount of tokens allocated to vesting
     uint256 public totalAllocation;
     /// @dev number of UUPS upgrades
-    uint8 public version;
+    uint32 public version;
     /// @dev number of the current round
-    uint8 public round;
+    uint32 public round;
     /// @dev Round object array
     Round[] public rounds;
     /// @dev Investor to round mapping
-    mapping(uint8 round_ => address[] participans) internal investors_;
+    mapping(uint32 round_ => address[] participans) internal investors_;
     /// @dev tracks investor position in the investors_ array mapping above
     /// @dev in order to be able to cancel investments without looping, just like EnumarableSet contract
-    mapping(uint8 round_ => mapping(address src => uint256 pos)) internal ipos;
+    mapping(uint32 round_ => mapping(address src => uint256 pos)) internal ipos;
     /// @dev Vesting contract addresses for investors per round
-    mapping(uint8 round_ => mapping(address src => address vesting)) public vestingContracts;
+    mapping(uint32 round_ => mapping(address src => address vesting)) internal vestingContracts;
     /// @dev Tracks investor allocations per round
-    mapping(uint8 round_ => mapping(address src => Investment)) public investorAllocations;
+    mapping(uint32 round_ => mapping(address src => Investment)) internal investorAllocations;
     uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -88,6 +88,11 @@ contract InvestmentManager is
         external
         initializer
     {
+        require(token != address(0x0), "ZERO_ADDRESS");
+        require(timelock_ != address(0x0), "ZERO_ADDRESS");
+        require(treasury_ != address(0x0), "ZERO_ADDRESS");
+        require(weth_ != address(0x0), "ZERO_ADDRESS");
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
@@ -136,7 +141,7 @@ contract InvestmentManager is
         uint64 end = start + duration;
         Round memory item = Round(ethTarget, 0, tokenAlloc, 0, start, end, 1);
         rounds.push(item);
-        emit CreateRound(SafeCast.toUint8(rounds.length - 1), start, duration, ethTarget, tokenAlloc);
+        emit CreateRound(SafeCast.toUint32(rounds.length - 1), start, duration, ethTarget, tokenAlloc);
     }
 
     /**
@@ -144,7 +149,7 @@ contract InvestmentManager is
      * @param round_ round number in question
      * @param amount amount of ETH to invest
      */
-    function investWETH(uint8 round_, uint256 amount) external whenNotPaused {
+    function investWETH(uint32 round_, uint256 amount) external whenNotPaused {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         invest(round_, amount);
         TH.safeTransferFrom(IERC20(address(wethContract)), msg.sender, address(this), amount);
@@ -154,7 +159,7 @@ contract InvestmentManager is
      * @dev Allows investor to get a rufund from an open round.
      * @param round_ round number in question
      */
-    function cancelInvestment(uint8 round_) external nonReentrant {
+    function cancelInvestment(uint32 round_) external nonReentrant {
         if (round_ > rounds.length) revert CustomError("INVALID_ROUND");
         Round storage current = rounds[round_];
         if (current.etherInvested == current.etherTarget) {
@@ -182,7 +187,7 @@ contract InvestmentManager is
      * @dev Closes an investment round after the round target has been reached.
      * @param round_ round number in question
      */
-    function closeRound(uint8 round_) external nonReentrant {
+    function closeRound(uint32 round_) external nonReentrant {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         Round memory current = rounds[round_];
 
@@ -194,6 +199,7 @@ contract InvestmentManager is
         deployVestingContracts(round_);
         wethContract.withdraw(current.etherInvested);
 
+        emit RoundClosed(round_);
         (bool success,) = treasury.call{value: current.etherInvested}("");
         if (!success) revert CustomError("WITHDRAWAL_FAILED");
     }
@@ -202,7 +208,7 @@ contract InvestmentManager is
      * @dev Allows manager to cancel a round if need be, and issues refunds (WETH) to investors.
      * @param round_ round number in question
      */
-    function cancelRound(uint8 round_) external nonReentrant onlyRole(MANAGER_ROLE) {
+    function cancelRound(uint32 round_) external nonReentrant onlyRole(MANAGER_ROLE) {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         Round memory current = rounds[round_];
         if (current.etherInvested == current.etherTarget) {
@@ -217,14 +223,16 @@ contract InvestmentManager is
 
         rounds.pop();
         supply -= current.tokenAllocation;
+        emit RoundCancelled(round_);
+        uint256 total = totalAllocation;
         if (len <= 50) {
             for (uint64 i; i < len; ++i) {
                 Investment memory item = investorAllocations[round_][investors[i]];
-                totalAllocation -= item.tokenAmount;
+                total = total - item.tokenAmount;
                 investorAllocations[round_][investors[i]] = Investment(0, 0);
                 TH.safeTransfer(IERC20(address(wethContract)), investors[i], item.etherAmount);
             }
-
+            totalAllocation = total;
             withdrawTokens(current.tokenAllocation);
         } else {
             revert CustomError("GAS_LIMIT");
@@ -235,7 +243,7 @@ contract InvestmentManager is
      * @dev Getter ruturns the curretly active round.
      * @return current round number
      */
-    function getCurrentRound() external view returns (uint8) {
+    function getCurrentRound() external view returns (uint32) {
         return round;
     }
 
@@ -244,7 +252,7 @@ contract InvestmentManager is
      * @param round_ round number in question
      * @return returns Round object
      */
-    function getRoundInfo(uint8 round_) external view returns (IINVESTOR.Round memory) {
+    function getRoundInfo(uint32 round_) external view returns (IINVESTOR.Round memory) {
         return rounds[round_];
     }
 
@@ -253,7 +261,7 @@ contract InvestmentManager is
      * @param round_ round number in question
      * @return returns min invest amount (ETH)
      */
-    function getMinInvestAmount(uint8 round_) external view returns (uint256) {
+    function getMinInvestAmount(uint32 round_) external view returns (uint256) {
         IINVESTOR.Round memory item = rounds[round_];
         return item.etherTarget / 50;
     }
@@ -262,7 +270,7 @@ contract InvestmentManager is
      * @dev Processes ETH investment into a round.
      * @param round_ round number in question
      */
-    function investEther(uint8 round_) public payable whenNotPaused {
+    function investEther(uint32 round_) public payable whenNotPaused {
         if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
         invest(round_, msg.value);
         Address.sendValue(payable(address(wethContract)), msg.value);
@@ -273,7 +281,7 @@ contract InvestmentManager is
      * @param round_ round number in question
      * @param amount amount of ETH to invest
      */
-    function invest(uint8 round_, uint256 amount) internal {
+    function invest(uint32 round_, uint256 amount) internal {
         Round storage item = rounds[round_];
 
         if (amount < item.etherTarget / 50) {
@@ -299,18 +307,18 @@ contract InvestmentManager is
         investment.tokenAmount += tokenAmount;
 
         emit Invest(round_, msg.sender, amount);
-        if (item.etherInvested == item.etherTarget) emit RoundClosed(round_);
+        if (item.etherInvested == item.etherTarget) emit RoundComplete(round_);
     }
 
     /**
      * @dev internal, deploys vesting contracts while closing the round.
      * @param round_ round number in question
      */
-    function deployVestingContracts(uint8 round_) internal {
+    function deployVestingContracts(uint32 round_) internal {
         address[] memory investors = investors_[round_];
         uint256 len = investors.length;
         address[] memory temp;
-        investors = temp;
+        investors_[round_] = temp;
         if (len <= 50) {
             for (uint256 i; i < len; ++i) {
                 uint256 alloc = investorAllocations[round][investors[i]].tokenAmount;
@@ -320,6 +328,7 @@ contract InvestmentManager is
                     SafeCast.toUint64(block.timestamp + 365 days), // cliff timestamp
                     SafeCast.toUint64(730 days) // duration after cliff
                 );
+                emit DeployVesting(round_, investors[i], address(vestingContract), alloc);
                 vestingContracts[round][investors[i]] = address(vestingContract);
                 TH.safeTransfer(ecosystemToken, address(vestingContract), alloc);
             }

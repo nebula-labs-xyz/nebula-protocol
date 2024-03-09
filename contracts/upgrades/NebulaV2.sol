@@ -261,7 +261,7 @@ contract NebulaV2 is
 
         if (amount >= balance) {
             amount = balance;
-            delete loanAccrueTimeIndex[msg.sender];
+            loanAccrueTimeIndex[msg.sender] = 0;
         } else {
             loanAccrueTimeIndex[msg.sender] = block.timestamp;
         }
@@ -337,14 +337,13 @@ contract NebulaV2 is
     function exitAll() external nonReentrant whenNotPaused {
         if (loans[msg.sender] > 0) repayMax();
         address[] memory assets = userCollateralAssets[msg.sender];
-        uint256 len = assets.length;
         delete userCollateralAssets[msg.sender];
-
-        for (uint256 i = 0; i < len; ++i) {
+        uint256 len = assets.length < 20 ? assets.length : 20;
+        for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[msg.sender][assets[i]];
             if (amount > 0) {
                 IERC20 assetContract = IERC20(assets[i]);
-                delete collateral[msg.sender][assets[i]];
+                collateral[msg.sender][assets[i]] = 0;
                 emit WithdrawCollateral(msg.sender, assets[i], amount);
                 TH.safeTransfer(assetContract, msg.sender, amount);
             }
@@ -367,16 +366,16 @@ contract NebulaV2 is
         TH.safeTransferFrom(usdcInstance, msg.sender, address(this), balance + liquidationFee);
 
         address[] memory assets = userCollateralAssets[src];
-        uint256 len = assets.length;
+
         delete userCollateralAssets[src];
 
         _mint(treasury, liquidationFee / 2);
         emit Liquidated(src, balance);
-
-        for (uint256 i = 0; i < len; ++i) {
+        uint256 len = assets.length < 20 ? assets.length : 20;
+        for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
             if (amount > 0) {
-                delete collateral[src][assets[i]];
+                collateral[src][assets[i]] = 0;
                 TH.safeTransfer(IERC20(assets[i]), msg.sender, amount);
             }
         }
@@ -598,10 +597,9 @@ contract NebulaV2 is
         if (loans[src] == 0) return 0;
         uint256 balance = getAccruedDebt(src);
         address[] memory assets = userCollateralAssets[src];
-        uint256 len = assets.length;
         uint256 liqLevel;
-
-        for (uint256 i = 0; i < len; ++i) {
+        uint256 len = assets.length < 20 ? assets.length : 20;
+        for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
             if (amount > 0) {
                 Asset memory token = assetInfo[assets[i]];
@@ -714,10 +712,9 @@ contract NebulaV2 is
         if (loans[src] == 0) return false;
         uint256 balance = getAccruedDebt(src);
         address[] memory assets = userCollateralAssets[src];
-        uint256 len = assets.length;
         uint256 cValue;
-
-        for (uint256 i = 0; i < len; ++i) {
+        uint256 len = assets.length < 20 ? assets.length : 20;
+        for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
             if (amount > 0) {
                 Asset memory token = assetInfo[assets[i]];
@@ -752,9 +749,8 @@ contract NebulaV2 is
      */
     function creditValue(address src) public view returns (uint256 value) {
         address[] memory assets = userCollateralAssets[src];
-        uint256 len = assets.length;
-
-        for (uint256 i = 0; i < len; ++i) {
+        uint256 len = assets.length < 20 ? assets.length : 20;
+        for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
             if (amount > 0) {
                 Asset memory token = assetInfo[assets[i]];

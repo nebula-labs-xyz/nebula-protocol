@@ -46,13 +46,13 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
         _;
     }
 
-    constructor(address usdc, address nebula, address BALANCER_VAULT_, address UNISWAP_ROUTER_, address govToken)
+    constructor(address usdc, address nebula, address balancerVault, address uniswapRouter, address govToken)
         Ownable(msg.sender)
     {
         USDC_INSTANCE = IERC20(usdc);
         NEBULA_INSTANCE = INEBULA(payable(nebula));
-        BALANCER_VAULT = IVault(BALANCER_VAULT_);
-        UNISWAP_ROUTER = ISwapRouter(UNISWAP_ROUTER_); //uniswapV3
+        BALANCER_VAULT = IVault(balancerVault);
+        UNISWAP_ROUTER = ISwapRouter(uniswapRouter); //uniswapV3
         TOKEN_INSTANCE = IERC20(govToken);
     }
 

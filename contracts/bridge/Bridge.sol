@@ -15,9 +15,17 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 /// @custom:oz-upgrades
-contract Bridge is IBRIDGE, Initializable, PausableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
+contract Bridge is
+    IBRIDGE,
+    Initializable,
+    PausableUpgradeable,
+    AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
+{
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
     /// @dev AccessControl Pauser Role
@@ -110,6 +118,7 @@ contract Bridge is IBRIDGE, Initializable, PausableUpgradeable, AccessControlUpg
      */
     function bridgeTokens(address token, address to, uint256 amount, uint256 destChainId)
         external
+        nonReentrant
         whenNotPaused
         returns (uint256)
     {

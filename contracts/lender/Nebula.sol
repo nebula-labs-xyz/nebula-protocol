@@ -339,15 +339,18 @@ contract Nebula is
         address[] memory assets = userCollateralAssets[msg.sender];
         delete userCollateralAssets[msg.sender];
         uint256 len = assets.length;
-        require(len <= 20, "ERR_ARRAY_LENGTH");
-        for (uint256 i; i < len; ++i) {
-            uint256 amount = collateral[msg.sender][assets[i]];
-            if (amount > 0) {
-                IERC20 assetContract = IERC20(assets[i]);
-                collateral[msg.sender][assets[i]] = 0;
-                emit WithdrawCollateral(msg.sender, assets[i], amount);
-                TH.safeTransfer(assetContract, msg.sender, amount);
+        if (len <= 20) {
+            for (uint256 i; i < len; ++i) {
+                uint256 amount = collateral[msg.sender][assets[i]];
+                if (amount > 0) {
+                    IERC20 assetContract = IERC20(assets[i]);
+                    collateral[msg.sender][assets[i]] = 0;
+                    emit WithdrawCollateral(msg.sender, assets[i], amount);
+                    TH.safeTransfer(assetContract, msg.sender, amount);
+                }
             }
+        } else {
+            revert("ERR_GAS_LIMIT");
         }
     }
 
@@ -373,13 +376,16 @@ contract Nebula is
         _mint(treasury, liquidationFee / 2);
         emit Liquidated(src, balance);
         uint256 len = assets.length;
-        require(len <= 20, "ERR_ARRAY_LENGTH");
-        for (uint256 i; i < len; ++i) {
-            uint256 amount = collateral[src][assets[i]];
-            if (amount > 0) {
-                collateral[src][assets[i]] = 0;
-                TH.safeTransfer(IERC20(assets[i]), msg.sender, amount);
+        if (len <= 20) {
+            for (uint256 i; i < len; ++i) {
+                uint256 amount = collateral[src][assets[i]];
+                if (amount > 0) {
+                    collateral[src][assets[i]] = 0;
+                    TH.safeTransfer(IERC20(assets[i]), msg.sender, amount);
+                }
             }
+        } else {
+            revert("ERR_GAS_LIMIT");
         }
     }
 
@@ -601,7 +607,7 @@ contract Nebula is
         address[] memory assets = userCollateralAssets[src];
         uint256 liqLevel;
         uint256 len = assets.length;
-        require(len <= 20, "ERR_ARRAY_LENGTH");
+
         for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
             if (amount > 0) {
@@ -717,7 +723,7 @@ contract Nebula is
         address[] memory assets = userCollateralAssets[src];
         uint256 cValue;
         uint256 len = assets.length;
-        require(len <= 20, "ERR_ARRAY_LENGTH");
+
         for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
             if (amount > 0) {
@@ -754,7 +760,7 @@ contract Nebula is
     function creditValue(address src) public view returns (uint256 value) {
         address[] memory assets = userCollateralAssets[src];
         uint256 len = assets.length;
-        require(len <= 20, "ERR_ARRAY_LENGTH");
+
         for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
             if (amount > 0) {

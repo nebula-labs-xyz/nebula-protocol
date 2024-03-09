@@ -18,15 +18,15 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 contract InvestorVesting is IVESTING, Context, Ownable2Step {
     /// @dev token contract instance
-    IERC20 private immutable TOKEN_INSTANCE;
+    IERC20 public immutable TOKEN_INSTANCE;
     /// @dev start timestamp
-    uint64 private immutable START;
+    uint64 public immutable START;
     /// @dev duration seconds
-    uint64 private immutable DURATION;
+    uint64 public immutable DURATION;
     /// @dev token address
-    address private immutable TOKEN;
+    address public immutable TOKEN;
     /// @dev amount of tokens released
-    mapping(address token => uint256 amount) private _erc20Released;
+    mapping(address token => uint256 amount) public _erc20Released;
 
     /**
      * @dev Sets the owner to beneficiary address, the start timestamp and the

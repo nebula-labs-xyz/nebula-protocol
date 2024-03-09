@@ -25,16 +25,16 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
     /// @dev USDC token instance
-    IERC20 private immutable USDC_INSTANCE;
+    IERC20 public immutable USDC_INSTANCE;
     /// @dev balancer vault instance
     /// @notice mainnet address 0xBA12222222228d8Ba445958a75a0704d566BF2C8
-    IVault private immutable BALANCER_VAULT;
+    IVault public immutable BALANCER_VAULT;
     /// @dev Nebula instance
-    INEBULA private immutable NEBULA_INSTANCE;
+    INEBULA public immutable NEBULA_INSTANCE;
     /// @dev gov token instance
-    IERC20 private immutable TOKEN_INSTANCE;
+    IERC20 public immutable TOKEN_INSTANCE;
     /// @dev Uniswap router instance
-    ISwapRouter private immutable UNISWAP_ROUTER;
+    ISwapRouter public immutable UNISWAP_ROUTER;
 
     error CustomError(string msg);
 

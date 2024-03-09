@@ -82,9 +82,6 @@ interface IINVESTOR {
      */
     error CustomError(string msg);
 
-    /// @dev triggers the investEther function on receive
-    receive() external payable;
-
     /**
      * @dev Pause contract.
      */

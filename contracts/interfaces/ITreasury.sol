@@ -42,9 +42,6 @@ interface ITREASURY {
      */
     error CustomError(string msg);
 
-    /// @notice solidity receive function
-    receive() external payable;
-
     /**
      * @dev UUPS version incremented every upgrade
      * @return version number

@@ -135,6 +135,7 @@ contract InvestmentManager is
         uint64 end = start + duration;
         Round memory item = Round(ethTarget, 0, tokenAlloc, 0, start, end, 1);
         rounds.push(item);
+        emit CreateRound(SafeCast.toUint8(rounds.length - 1), start, duration, ethTarget, tokenAlloc);
     }
 
     /**
@@ -172,6 +173,7 @@ contract InvestmentManager is
         totalAllocation -= item.tokenAmount;
         current.etherInvested -= item.etherAmount;
         current.participants--;
+        emit CancelInvestment(round_, msg.sender, item.etherAmount);
         TH.safeTransfer(IERC20(address(wethContract)), msg.sender, item.etherAmount);
     }
 

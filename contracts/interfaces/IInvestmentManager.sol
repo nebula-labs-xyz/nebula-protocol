@@ -46,6 +46,24 @@ interface IINVESTOR {
     /**
      * @dev Invest Event
      * @param round, number
+     * @param start, timestamp
+     * @param duration, seconds
+     * @param ethTarget, amount
+     * @param tokenAlloc, amount
+     */
+    event CreateRound(uint8 round, uint64 start, uint64 duration, uint256 ethTarget, uint256 tokenAlloc);
+
+    /**
+     * @dev Cancel Investment Event
+     * @param round, number
+     * @param src, address
+     * @param amount, amount
+     */
+    event CancelInvestment(uint8 round, address indexed src, uint256 amount);
+
+    /**
+     * @dev Invest Event
+     * @param round, number
      * @param src, address
      * @param amount, amount
      */

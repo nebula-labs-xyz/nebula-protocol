@@ -60,8 +60,7 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      * @dev Allows the DAO to cancel the contract in case the team member is fired.
      *      Release vested amount and refund the remainder to timelock.
      */
-    function cancelContract() external {
-        if (msg.sender != _timelock) revert CustomError("UNAUTHORIZED");
+    function cancelContract() external onlyTimelock {
         release();
         uint256 remainder = tokenContract.balanceOf(address(this));
         emit Cancelled(remainder);

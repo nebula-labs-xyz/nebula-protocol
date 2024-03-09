@@ -211,8 +211,7 @@ contract TreasuryV2 is
             return 0;
         } else if (timestamp >= end()) {
             return totalAllocation;
-        } else {
-            return (totalAllocation * (timestamp - start())) / duration();
         }
+        return (totalAllocation * (timestamp - start())) / duration();
     }
 }

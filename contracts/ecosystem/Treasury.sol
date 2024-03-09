@@ -71,6 +71,7 @@ contract Treasury is
         _start = SafeCast.toUint64(block.timestamp - 219 days);
         _duration = SafeCast.toUint64(1095 days + 219 days);
         version++;
+        emit Initialized(msg.sender);
     }
 
     /**

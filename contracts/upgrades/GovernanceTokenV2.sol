@@ -49,6 +49,11 @@ contract GovernanceTokenV2 is
     uint8 public tge;
     uint256[50] private __gap;
 
+    /**
+     * @dev Initialized Event.
+     * @param src sender address
+     */
+    event Initialized(address indexed src);
     /// @dev event emitted at TGE
     /// @param amount token amount
     event TGE(uint256 amount);
@@ -88,6 +93,7 @@ contract GovernanceTokenV2 is
         initialSupply = 50_000_000 ether;
         maxBridge = 10_000 ether;
         version++;
+        emit Initialized(msg.sender);
     }
 
     /**

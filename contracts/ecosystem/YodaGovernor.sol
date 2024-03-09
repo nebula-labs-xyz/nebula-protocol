@@ -43,6 +43,12 @@ contract YodaGovernor is
     uint256[50] private __gap;
 
     /**
+     * @dev Initialized Event.
+     * @param src sender address
+     */
+    event Initialized(address indexed src);
+
+    /**
      * @dev event emitted on UUPS upgrade
      * @param src upgrade sender address
      * @param implementation new implementation address
@@ -73,6 +79,7 @@ contract YodaGovernor is
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
         ++uupsVersion;
+        emit Initialized(msg.sender);
     }
 
     // The following functions are overrides required by Solidity.

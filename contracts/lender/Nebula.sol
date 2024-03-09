@@ -149,6 +149,7 @@ contract Nebula is
         baseProfitTarget = 0.01e6;
         liquidatorThreshold = 20_000 ether;
         ++version;
+        emit Initialized(msg.sender);
     }
 
     /**

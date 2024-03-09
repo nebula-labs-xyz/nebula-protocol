@@ -38,6 +38,12 @@ interface IINVESTOR {
     }
 
     /**
+     * @dev Initialized Event.
+     * @param src sender address
+     */
+    event Initialized(address indexed src);
+
+    /**
      * @dev RoundClosed Event.
      * @param round, number
      */

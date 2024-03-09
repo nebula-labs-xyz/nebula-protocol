@@ -8,6 +8,12 @@ pragma solidity 0.8.23;
 
 interface ITREASURY {
     /**
+     * @dev Initialized Event.
+     * @param src sender address
+     */
+    event Initialized(address indexed src);
+
+    /**
      * @dev Received Event
      * @param src sender address
      * @param amount amount

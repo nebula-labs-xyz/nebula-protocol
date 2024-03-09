@@ -89,6 +89,7 @@ contract EcosystemV2 is
         maxReward = rewardSupply / 1000;
         maxBurn = rewardSupply / 50;
         ++version;
+        emit Initialized(msg.sender);
     }
 
     /**

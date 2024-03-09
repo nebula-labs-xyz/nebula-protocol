@@ -73,6 +73,7 @@ contract TeamManager is
         ecosystemToken = IYODA(payable(token));
         supply = (ecosystemToken.initialSupply() * 18) / 100;
         ++version;
+        emit Initialized(msg.sender);
     }
 
     /**

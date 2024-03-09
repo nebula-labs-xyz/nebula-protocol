@@ -8,6 +8,12 @@ pragma solidity 0.8.23;
 
 interface IECOSYSTEM {
     /**
+     * @dev Initialized Event.
+     * @param src sender address
+     */
+    event Initialized(address indexed src);
+
+    /**
      * @dev Burn Event.
      * @param amount burned
      */

@@ -20,6 +20,12 @@ contract YodaTimelock is TimelockControllerUpgradeable, UUPSUpgradeable {
     uint256[50] private __gap;
 
     /**
+     * @dev Initialized Event.
+     * @param src sender address
+     */
+    event Initialized(address indexed src);
+
+    /**
      * @dev event emitted on UUPS upgrade
      * @param src upgrade sender address
      * @param implementation new implementation address
@@ -46,6 +52,7 @@ contract YodaTimelock is TimelockControllerUpgradeable, UUPSUpgradeable {
         __AccessControl_init();
         __UUPSUpgradeable_init();
         __TimelockController_init(minDelay, proposers, executors, admin);
+        emit Initialized(msg.sender);
     }
 
     /// @inheritdoc UUPSUpgradeable

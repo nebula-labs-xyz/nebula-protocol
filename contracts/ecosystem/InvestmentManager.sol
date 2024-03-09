@@ -102,6 +102,7 @@ contract InvestmentManager is
         timelock = timelock_;
         treasury = treasury_;
         version++;
+        emit Initialized(msg.sender);
     }
 
     /**

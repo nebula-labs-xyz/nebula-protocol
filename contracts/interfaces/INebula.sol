@@ -54,6 +54,12 @@ interface INEBULA {
     }
 
     /**
+     * @dev Initialized Event.
+     * @param src sender address
+     */
+    event Initialized(address indexed src);
+
+    /**
      * @dev SupplyLiquidity Event
      * @param src sender address
      * @param amount USDC supplied (1e6)

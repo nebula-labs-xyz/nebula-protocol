@@ -8,6 +8,12 @@ pragma solidity 0.8.23;
 
 interface ITEAMMANAGER {
     /**
+     * @dev Initialized Event.
+     * @param src sender address
+     */
+    event Initialized(address indexed src);
+
+    /**
      * @dev Upgrade Event.
      * @param src sender address
      * @param implementation address

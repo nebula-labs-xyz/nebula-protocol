@@ -48,6 +48,12 @@ interface IBRIDGE {
     }
 
     /**
+     * @dev Initialized Event.
+     * @param src sender address
+     */
+    event Initialized(address indexed src);
+
+    /**
      * @dev Upgrade Event.
      * @param src sender address
      * @param implementation address

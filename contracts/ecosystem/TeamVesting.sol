@@ -17,16 +17,14 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
-    /// @dev token contract instance
-    IERC20 public immutable TOKEN_INSTANCE;
     /// @dev start timestamp
-    uint64 public immutable START;
+    uint64 private immutable _start;
     /// @dev duration seconds
-    uint64 public immutable DURATION;
-    /// @dev timelock address
-    address public immutable TIMELOCK;
+    uint64 private immutable _duration;
     /// @dev token address
-    address public immutable TOKEN;
+    address private immutable _token;
+    /// @dev timelock address
+    address public immutable _timelock;
     /// @dev amount of tokens released
     mapping(address token => uint256 amount) private _erc20Released;
 
@@ -42,18 +40,15 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      * @dev Sets the owner to beneficiary address, the start timestamp and the
      * vesting duration of the vesting contract.
      */
-    constructor(
-        address token,
-        address timelock,
-        address beneficiary, // solhint-disable-line
-        uint64 startTimestamp,
-        uint64 durationSeconds
-    ) payable Ownable(beneficiary) {
-        TOKEN = token;
-        TIMELOCK = timelock;
-        START = startTimestamp;
-        DURATION = durationSeconds;
-        TOKEN_INSTANCE = IERC20(token);
+    constructor(address token, address timelock, address beneficiary, uint64 startTimestamp, uint64 durationSeconds)
+        payable
+        Ownable(beneficiary)
+    {
+        require(token != address(0x0) && timelock != address(0x0) && beneficiary != address(0x0), "ZERO_ADDRESS");
+        _token = token;
+        _timelock = timelock;
+        _start = startTimestamp;
+        _duration = durationSeconds;
     }
 
     /**
@@ -62,9 +57,9 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      */
     function cancelContract() external onlyTimelock {
         release();
-        uint256 remainder = TOKEN_INSTANCE.balanceOf(address(this));
+        uint256 remainder = IERC20(_token).balanceOf(address(this));
         emit Cancelled(remainder);
-        SafeERC20.safeTransfer(TOKEN_INSTANCE, TIMELOCK, remainder);
+        SafeERC20.safeTransfer(IERC20(_token), _timelock, remainder);
     }
 
     /**
@@ -74,9 +69,9 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      */
     function release() public virtual {
         uint256 amount = releasable();
-        _erc20Released[TOKEN] += amount;
-        emit ERC20Released(TOKEN, amount);
-        SafeERC20.safeTransfer(TOKEN_INSTANCE, owner(), amount);
+        _erc20Released[_token] += amount;
+        emit ERC20Released(_token, amount);
+        SafeERC20.safeTransfer(IERC20(_token), owner(), amount);
     }
 
     /**
@@ -84,7 +79,7 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      * @return start timestamp
      */
     function start() public view virtual returns (uint256) {
-        return START;
+        return _start;
     }
 
     /**
@@ -92,7 +87,7 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      * @return duration seconds
      */
     function duration() public view virtual returns (uint256) {
-        return DURATION;
+        return _duration;
     }
 
     /**
@@ -108,7 +103,7 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      * @return amount of tokens released so far
      */
     function released() public view virtual returns (uint256) {
-        return _erc20Released[TOKEN];
+        return _erc20Released[_token];
     }
 
     /**
@@ -123,7 +118,7 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      * @dev Throws if the sender is not the timelock.
      */
     function _checkTimelock() internal view virtual {
-        if (TIMELOCK != _msgSender()) {
+        if (_timelock != _msgSender()) {
             revert CustomError("UNAUTHORIZED");
         }
     }
@@ -134,7 +129,7 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      * @return amount vested
      */
     function vestedAmount(uint64 timestamp) internal view virtual returns (uint256) {
-        return _vestingSchedule(TOKEN_INSTANCE.balanceOf(address(this)) + released(), timestamp);
+        return _vestingSchedule(IERC20(_token).balanceOf(address(this)) + released(), timestamp);
     }
 
     /**

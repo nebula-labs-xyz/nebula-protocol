@@ -85,7 +85,7 @@ contract Bridge is
         whenNotPaused
         onlyRole(MANAGER_ROLE)
     {
-        require(tokenSet.contains(token) != true, "ERR_TOKEN_EXISTS");
+        require(!tokenSet.contains(token), "ERR_TOKEN_EXISTS");
 
         Token storage item = tokens[token];
         item.name = name;
@@ -122,8 +122,8 @@ contract Bridge is
         whenNotPaused
         returns (uint256)
     {
-        require(tokenSet.contains(token) == true, "ERR_UNLISTED_TOKEN");
-        require(chainSet.contains(destChainId) == true, "ERR_UNKNOWN_CHAIN");
+        require(tokenSet.contains(token), "ERR_UNLISTED_TOKEN");
+        require(chainSet.contains(destChainId), "ERR_UNKNOWN_CHAIN");
         IERC20Bridgable tokenContract = IERC20Bridgable(payable(token));
         require(tokenContract.balanceOf(msg.sender) >= amount, "ERR_INSUFFICIENT_BALANCE");
         transactionId++;
@@ -158,7 +158,7 @@ contract Bridge is
      * @param chainId chain ID
      */
     function addChain(string calldata name, uint256 chainId) external whenNotPaused onlyRole(MANAGER_ROLE) {
-        require(chainSet.contains(chainId) != true, "ERR_CHAIN_EXISTS");
+        require(!chainSet.contains(chainId), "ERR_CHAIN_EXISTS");
 
         Chain storage item = chains[chainId];
         item.name = name;

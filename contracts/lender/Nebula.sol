@@ -467,7 +467,7 @@ contract Nebula is
         uint32 liquidationThreshold,
         uint256 maxSupplyLimit
     ) external onlyRole(MANAGER_ROLE) {
-        if (listedAsset.contains(asset) != true) {
+        if (!listedAsset.contains(asset)) {
             require(listedAsset.add(asset), "ERR_ADDING_ASSET");
         }
 

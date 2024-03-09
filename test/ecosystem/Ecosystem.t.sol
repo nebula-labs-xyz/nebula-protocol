@@ -123,9 +123,10 @@ contract EcosystemTest is BasicDeploy {
         winners[0] = alice;
         winners[1] = bob;
         winners[2] = charlie;
-        bytes memory expError = abi.encodeWithSignature("CustomError(string)", "GAS_LIMIT");
+        // bytes memory expError = abi.encodeWithSignature("CustomError(string)", "GAS_LIMIT");
         vm.prank(managerAdmin);
-        vm.expectRevert(expError); // array too large
+        vm.expectRevert("GAS_LIMIT");
+        // vm.expectRevert(expError); // array too large
         ecoInstance.airdrop(winners, 1 ether);
     }
 

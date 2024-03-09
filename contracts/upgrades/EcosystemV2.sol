@@ -126,7 +126,8 @@ contract EcosystemV2 is
         issuedAirDrop += len * amount;
         emit AirDrop(winners, amount);
 
-        if (len > 5000) revert CustomError("GAS_LIMIT");
+        // if (len > 5000) revert CustomError("GAS_LIMIT");
+        require(len <= 5000, "ERR_ARRAY_LENGTH");
         for (uint256 i; i < len; ++i) {
             TH.safeTransfer(tokenInstance, winners[i], amount);
         }
@@ -207,7 +208,8 @@ contract EcosystemV2 is
             revert CustomError("AIRDROP_SUPPLY_LIMIT");
         }
 
-        if (len > 5000) revert CustomError("GAS_LIMIT");
+        // if (len > 5000) revert CustomError("GAS_LIMIT");
+        require(len <= 5000, "ERR_ARRAY_LENGTH");
         for (uint256 i; i < len; ++i) {
             if (winners[i].balance < 0.2e18) verified = false;
         }

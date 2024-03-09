@@ -338,7 +338,8 @@ contract Nebula is
         if (loans[msg.sender] > 0) repayMax();
         address[] memory assets = userCollateralAssets[msg.sender];
         delete userCollateralAssets[msg.sender];
-        uint256 len = assets.length < 20 ? assets.length : 20;
+        uint256 len = assets.length;
+        require(len <= 20, "ERR_ARRAY_LENGTH");
         for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[msg.sender][assets[i]];
             if (amount > 0) {
@@ -371,7 +372,8 @@ contract Nebula is
 
         _mint(treasury, liquidationFee / 2);
         emit Liquidated(src, balance);
-        uint256 len = assets.length < 20 ? assets.length : 20;
+        uint256 len = assets.length;
+        require(len <= 20, "ERR_ARRAY_LENGTH");
         for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
             if (amount > 0) {
@@ -598,7 +600,8 @@ contract Nebula is
         uint256 balance = getAccruedDebt(src);
         address[] memory assets = userCollateralAssets[src];
         uint256 liqLevel;
-        uint256 len = assets.length < 20 ? assets.length : 20;
+        uint256 len = assets.length;
+        require(len <= 20, "ERR_ARRAY_LENGTH");
         for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
             if (amount > 0) {
@@ -713,7 +716,8 @@ contract Nebula is
         uint256 balance = getAccruedDebt(src);
         address[] memory assets = userCollateralAssets[src];
         uint256 cValue;
-        uint256 len = assets.length < 20 ? assets.length : 20;
+        uint256 len = assets.length;
+        require(len <= 20, "ERR_ARRAY_LENGTH");
         for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
             if (amount > 0) {
@@ -749,7 +753,8 @@ contract Nebula is
      */
     function creditValue(address src) public view returns (uint256 value) {
         address[] memory assets = userCollateralAssets[src];
-        uint256 len = assets.length < 20 ? assets.length : 20;
+        uint256 len = assets.length;
+        require(len <= 20, "ERR_ARRAY_LENGTH");
         for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
             if (amount > 0) {

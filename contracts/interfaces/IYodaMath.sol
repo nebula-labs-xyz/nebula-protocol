@@ -11,7 +11,7 @@ interface IYODAMATH {
      * @dev rmul function
      * @param x amount
      * @param y amount
-     * @return z value
+     * @return value
      */
     function rmul(uint256 x, uint256 y) external pure returns (uint256);
 
@@ -19,7 +19,7 @@ interface IYODAMATH {
      * @dev rdiv function
      * @param x amount
      * @param y amount
-     * @return z value
+     * @return value
      */
     function rdiv(uint256 x, uint256 y) external pure returns (uint256);
 
@@ -27,14 +27,14 @@ interface IYODAMATH {
      * @dev rpow function
      * @param x amount
      * @param n amount
-     * @return r value
+     * @return value
      */
     function rpow(uint256 x, uint256 n) external pure returns (uint256);
 
     /**
      * @dev Converts rate to rateRay
      * @param rate rate
-     * @return r rateRay
+     * @return rateRay
      */
     function annualRateToRay(uint256 rate) external pure returns (uint256);
 

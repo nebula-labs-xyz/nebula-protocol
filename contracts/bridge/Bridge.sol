@@ -250,6 +250,16 @@ contract Bridge is
         return transactions[tranId];
     }
 
+    /// @inheritdoc PausableUpgradeable
+    function _pause() internal override(PausableUpgradeable) {
+        super._pause();
+    }
+
+    /// @inheritdoc PausableUpgradeable
+    function _unpause() internal override(PausableUpgradeable) {
+        super._unpause();
+    }
+
     /// @inheritdoc UUPSUpgradeable
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {
         ++version;

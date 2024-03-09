@@ -62,12 +62,13 @@ contract TreasuryV2 is
      * @param timelock address of timelock contract
      */
     function initialize(address guardian, address timelock) external initializer {
-        require(guardian != address(0x0), "ZERO_ADDRESS");
-        require(timelock != address(0x0), "ZERO_ADDRESS");
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
+
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         _grantRole(DEFAULT_ADMIN_ROLE, guardian);
+        require(timelock != address(0x0), "ZERO_ADDRESS");
         _grantRole(MANAGER_ROLE, timelock);
 
         _start = SafeCast.toUint64(block.timestamp - 219 days);

@@ -74,16 +74,18 @@ contract EcosystemV2 is
      * @param pauser pauser address
      */
     function initialize(address token, address guardian, address pauser) external initializer {
-        require(token != address(0x0) && guardian != address(0x0) && pauser != address(0x0), "ZERO_ADDRESS");
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         _grantRole(DEFAULT_ADMIN_ROLE, guardian);
+        require(pauser != address(0x0), "ZERO_ADDRESS");
         _grantRole(PAUSER_ROLE, pauser);
-
+        require(token != address(0x0), "ZERO_ADDRESS");
         tokenInstance = IYODA(payable(token));
         uint256 initialSupply = tokenInstance.initialSupply();
+        require(initialSupply != 0, "SUPPLY_ERROR");
         rewardSupply = (initialSupply * 26) / 100;
         airdropSupply = (initialSupply * 10) / 100;
         partnershipSupply = (initialSupply * 8) / 100;

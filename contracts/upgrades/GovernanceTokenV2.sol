@@ -80,7 +80,6 @@ contract GovernanceTokenV2 is
      * @param guardian admin address
      */
     function initializeUUPS(address guardian) external initializer {
-        require(guardian != address(0x0), "ZERO_ADDRESS");
         __ERC20_init("Yoda Coin", "YODA");
         __ERC20Burnable_init();
         __ERC20Pausable_init();
@@ -89,6 +88,7 @@ contract GovernanceTokenV2 is
         __ERC20Votes_init();
         __UUPSUpgradeable_init();
 
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         _grantRole(DEFAULT_ADMIN_ROLE, guardian);
         _grantRole(PAUSER_ROLE, guardian);
         initialSupply = 50_000_000 ether;

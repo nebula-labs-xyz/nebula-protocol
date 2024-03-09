@@ -127,23 +127,23 @@ contract NebulaV2 is
         address timelock_,
         address guardian
     ) external initializer {
-        require(usdc != address(0x0), "ZERO_ADDRESS");
-        require(govToken != address(0x0), "ZERO_ADDRESS");
-        require(ecosystem != address(0x0), "ZERO_ADDRESS");
-        require(timelock_ != address(0x0), "ZERO_ADDRESS");
-        require(guardian != address(0x0), "ZERO_ADDRESS");
         __ERC20_init("Nebula Coin", "NBL");
         __ERC20Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         _grantRole(DEFAULT_ADMIN_ROLE, guardian);
         _grantRole(PAUSER_ROLE, guardian);
+        require(timelock_ != address(0x0), "ZERO_ADDRESS");
         _grantRole(MANAGER_ROLE, timelock_);
-
+        require(usdc != address(0x0), "ZERO_ADDRESS");
         usdcInstance = IERC20(usdc);
+        require(govToken != address(0x0), "ZERO_ADDRESS");
         tokenInstance = IERC20(govToken);
+        require(ecosystem != address(0x0), "ZERO_ADDRESS");
         ecosystemInstance = IECOSYSTEM(payable(ecosystem));
+        require(treasury_ != address(0x0), "ZERO_ADDRESS");
         treasury = treasury_;
         timelock = timelock_;
 

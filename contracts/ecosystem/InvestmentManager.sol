@@ -88,23 +88,22 @@ contract InvestmentManager is
         external
         initializer
     {
-        require(token != address(0x0), "ZERO_ADDRESS");
-        require(timelock_ != address(0x0), "ZERO_ADDRESS");
-        require(treasury_ != address(0x0), "ZERO_ADDRESS");
-        require(weth_ != address(0x0), "ZERO_ADDRESS");
-        require(guardian != address(0x0), "ZERO_ADDRESS");
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         _grantRole(DEFAULT_ADMIN_ROLE, guardian);
+        require(timelock_ != address(0x0), "ZERO_ADDRESS");
         _grantRole(MANAGER_ROLE, timelock_);
         _grantRole(PAUSER_ROLE, guardian);
-
+        require(token != address(0x0), "ZERO_ADDRESS");
         ecosystemToken = IYODA(payable(token));
+        require(weth_ != address(0x0), "ZERO_ADDRESS");
         wethContract = IWETH9(payable(weth_));
 
         timelock = timelock_;
+        require(treasury_ != address(0x0), "ZERO_ADDRESS");
         treasury = treasury_;
         version++;
         emit Initialized(msg.sender);

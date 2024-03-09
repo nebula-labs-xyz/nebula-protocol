@@ -48,10 +48,10 @@ contract YodaTimelock is TimelockControllerUpgradeable, UUPSUpgradeable {
         external
         initializer
     {
-        require(guardian != address(0x0), "ZERO_ADDRESS");
         ++version;
         __AccessControl_init();
         __UUPSUpgradeable_init();
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         __TimelockController_init(minDelay, proposers, executors, guardian);
         emit Initialized(msg.sender);
     }

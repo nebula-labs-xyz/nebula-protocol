@@ -70,15 +70,15 @@ contract YodaGovernorV2 is
         external
         initializer
     {
-        require(guardian != address(0x0), "ZERO_ADDRESS");
-        require(address(_token) != address(0x0), "ZERO_ADDRESS");
-        require(address(_timelock) != address(0x0), "ZERO_ADDRESS");
         __Governor_init("Yoda Governor");
         __GovernorSettings_init(7200, /* 1 day */ 50400, /* 1 week */ 20000e18);
         __GovernorCountingSimple_init();
+        require(address(_token) != address(0x0), "ZERO_ADDRESS");
         __GovernorVotes_init(_token);
         __GovernorVotesQuorumFraction_init(1);
+        require(address(_timelock) != address(0x0), "ZERO_ADDRESS");
         __GovernorTimelockControl_init(_timelock);
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         __Ownable_init(guardian);
         __UUPSUpgradeable_init();
         ++uupsVersion;

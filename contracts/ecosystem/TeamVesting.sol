@@ -15,8 +15,9 @@ import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
+contract TeamVesting is ITEAMVESTING, Context, Ownable2Step, ReentrancyGuard {
     /// @dev start timestamp
     uint64 private immutable _start;
     /// @dev duration seconds
@@ -55,11 +56,12 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step {
      * @dev Allows the DAO to cancel the contract in case the team member is fired.
      *      Release vested amount and refund the remainder to timelock.
      */
-    function cancelContract() external onlyTimelock {
+    function cancelContract() external nonReentrant onlyTimelock {
         release();
-        uint256 remainder = IERC20(_token).balanceOf(address(this));
+        IERC20 tokenInstance = IERC20(_token);
+        uint256 remainder = tokenInstance.balanceOf(address(this));
         emit Cancelled(remainder);
-        SafeERC20.safeTransfer(IERC20(_token), _timelock, remainder);
+        SafeERC20.safeTransfer(tokenInstance, _timelock, remainder);
     }
 
     /**

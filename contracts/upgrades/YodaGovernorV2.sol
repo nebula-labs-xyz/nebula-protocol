@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 /**
  * @title Yoda GovernorV2
  * @notice Standard OZUpgradeable governor, small modification with UUPS

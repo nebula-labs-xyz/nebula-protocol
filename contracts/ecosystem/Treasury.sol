@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v5.0.0) (finance/VestingWallet.sol)
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 /**
  * @title Yoda Treasury Contract
  * @notice Vesting contract: initialRelease + (36 month duration)

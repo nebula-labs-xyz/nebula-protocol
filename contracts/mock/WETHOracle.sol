@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
 contract WETHPriceConsumerV3 {
     int256 public price = 2500e8;

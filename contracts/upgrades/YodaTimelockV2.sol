@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 /**
  * @title Yoda TimelockV2
  * @notice Standard OZUpgradeable Timelock, small modification with UUPS

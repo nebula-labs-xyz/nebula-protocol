@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-v3.0
 // Derived from https://github.com/dapphub/ds-math/
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 /**
  * @title Yoda Math Contract
  * @notice Compunding and beyond

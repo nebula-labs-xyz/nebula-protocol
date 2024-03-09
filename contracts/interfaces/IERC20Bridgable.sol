@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 /**
  * @title IERC20Bridgable Interface
  * @author Nebula Labs Inc

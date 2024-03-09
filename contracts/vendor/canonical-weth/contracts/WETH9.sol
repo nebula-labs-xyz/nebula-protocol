@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // SPDX-License-Identifier: GPL-v3.0
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
 contract WETH9 {
     string public name = "Wrapped Ether";

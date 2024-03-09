@@ -58,14 +58,16 @@ contract Treasury is
 
     /**
      * @dev Initializes the UUPS contract
-     * @param admin admin address
+     * @param guardian admin address
      * @param timelock address of timelock contract
      */
-    function initialize(address admin, address timelock) external initializer {
+    function initialize(address guardian, address timelock) external initializer {
+        require(guardian != address(0x0), "ZERO_ADDRESS");
+        require(timelock != address(0x0), "ZERO_ADDRESS");
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, guardian);
         _grantRole(MANAGER_ROLE, timelock);
 
         _start = SafeCast.toUint64(block.timestamp - 219 days);

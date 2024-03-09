@@ -64,19 +64,22 @@ contract YodaGovernor is
      * @dev Initializes the UUPS contract
      * @param _token IVotes token instance
      * @param _timelock timelock instance
-     * @param initialOwner owner address
+     * @param guardian owner address
      */
-    function initialize(IVotes _token, TimelockControllerUpgradeable _timelock, address initialOwner)
+    function initialize(IVotes _token, TimelockControllerUpgradeable _timelock, address guardian)
         external
         initializer
     {
+        require(guardian != address(0x0), "ZERO_ADDRESS");
+        require(address(_token) != address(0x0), "ZERO_ADDRESS");
+        require(address(_timelock) != address(0x0), "ZERO_ADDRESS");
         __Governor_init("Yoda Governor");
         __GovernorSettings_init(7200, /* 1 day */ 50400, /* 1 week */ 20000e18);
         __GovernorCountingSimple_init();
         __GovernorVotes_init(_token);
         __GovernorVotesQuorumFraction_init(1);
         __GovernorTimelockControl_init(_timelock);
-        __Ownable_init(initialOwner);
+        __Ownable_init(guardian);
         __UUPSUpgradeable_init();
         ++uupsVersion;
         emit Initialized(msg.sender);

@@ -61,6 +61,9 @@ contract TeamManager is
      * @param guardian guardian address
      */
     function initialize(address token, address timelock_, address guardian) external initializer {
+        require(token != address(0x0), "ZERO_ADDRESS");
+        require(timelock_ != address(0x0), "ZERO_ADDRESS");
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();

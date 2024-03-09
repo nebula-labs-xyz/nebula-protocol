@@ -42,16 +42,17 @@ contract YodaTimelockV2 is TimelockControllerUpgradeable, UUPSUpgradeable {
      * @param minDelay timelock delay seconds
      * @param proposers address array of proposers
      * @param executors address array of executors
-     * @param admin address of admin
+     * @param guardian address of guardian
      */
-    function initialize(uint256 minDelay, address[] memory proposers, address[] memory executors, address admin)
+    function initialize(uint256 minDelay, address[] memory proposers, address[] memory executors, address guardian)
         external
         initializer
     {
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         ++version;
         __AccessControl_init();
         __UUPSUpgradeable_init();
-        __TimelockController_init(minDelay, proposers, executors, admin);
+        __TimelockController_init(minDelay, proposers, executors, guardian);
         emit Initialized(msg.sender);
     }
 

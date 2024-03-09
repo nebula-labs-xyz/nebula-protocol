@@ -70,15 +70,16 @@ contract EcosystemV2 is
     /**
      * @dev Initializes the ecosystem contract
      * @param token token address
-     * @param defaultAdmin admin address
+     * @param guardian admin address
      * @param pauser pauser address
      */
-    function initialize(address token, address defaultAdmin, address pauser) external initializer {
+    function initialize(address token, address guardian, address pauser) external initializer {
+        require(token != address(0x0) && guardian != address(0x0) && pauser != address(0x0), "ZERO_ADDRESS");
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
-        _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
+        _grantRole(DEFAULT_ADMIN_ROLE, guardian);
         _grantRole(PAUSER_ROLE, pauser);
 
         tokenInstance = IYODA(payable(token));

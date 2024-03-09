@@ -64,6 +64,9 @@ contract Bridge is
      * @param timelock address
      */
     function initialize(address guardian, address timelock) external initializer {
+        require(guardian != address(0x0), "ZERO_ADDRESS");
+        require(timelock != address(0x0), "ZERO_ADDRESS");
+
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();

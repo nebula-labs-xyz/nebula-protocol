@@ -64,6 +64,9 @@ interface IINVESTOR {
     /**
      * @dev DeployVesting Event.
      * @param round, number
+     * @param to beneficiary address
+     * @param vesting contract address
+     * @param amount of tokens
      */
     event DeployVesting(uint32 round, address indexed to, address indexed vesting, uint256 amount);
 

@@ -80,6 +80,7 @@ contract GovernanceToken is
      * @param guardian admin address
      */
     function initializeUUPS(address guardian) external initializer {
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         __ERC20_init("Yoda Coin", "YODA");
         __ERC20Burnable_init();
         __ERC20Pausable_init();
@@ -102,6 +103,7 @@ contract GovernanceToken is
      * @param treasury treasury contract address
      */
     function initializeTGE(address ecosystem, address treasury) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(ecosystem != address(0x0) && treasury != address(0x0), "ZERO_ADDRESS");
         if (tge > 0) revert CustomError({msg: "TGE_ALREADY_INITIALIZED"});
         ++tge;
 

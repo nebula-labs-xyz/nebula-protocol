@@ -127,6 +127,11 @@ contract Nebula is
         address timelock_,
         address guardian
     ) external initializer {
+        require(usdc != address(0x0), "ZERO_ADDRESS");
+        require(govToken != address(0x0), "ZERO_ADDRESS");
+        require(ecosystem != address(0x0), "ZERO_ADDRESS");
+        require(timelock_ != address(0x0), "ZERO_ADDRESS");
+        require(guardian != address(0x0), "ZERO_ADDRESS");
         __ERC20_init("Nebula Coin", "NBL");
         __ERC20Pausable_init();
         __AccessControl_init();

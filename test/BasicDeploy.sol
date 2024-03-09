@@ -140,6 +140,15 @@ contract BasicDeploy is Test {
         tokenInstance = GovernanceToken(proxy);
         address tokenImplementation = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(tokenInstance) == tokenImplementation);
+        // timelock deploy
+        uint256 timelockDelay = 24 * 60 * 60;
+        address[] memory temp = new address[](1);
+        temp[0] = ethereum;
+        bytes memory data2 = abi.encodeCall(YodaTimelock.initialize, (timelockDelay, temp, temp, guardian));
+        address payable proxy2 = payable(Upgrades.deployUUPSProxy("YodaTimelock.sol", data2));
+        timelockInstance = YodaTimelock(proxy2);
+        address tlImplementation = Upgrades.getImplementationAddress(proxy2);
+        assertFalse(address(timelockInstance) == tlImplementation);
         //deploy Treasury
         bytes memory data1 = abi.encodeCall(Treasury.initialize, (guardian, address(timelockInstance)));
         address payable proxy1 = payable(Upgrades.deployUUPSProxy("Treasury.sol", data1));

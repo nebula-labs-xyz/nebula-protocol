@@ -341,7 +341,14 @@ contract NebulaV2 is
      * Emits a {WithdrawCollateral} event.
      */
     function exitAll() external nonReentrant whenNotPaused {
-        if (loans[msg.sender] > 0) repayMax();
+        if (loans[msg.sender] > 0) {
+            uint256 balance = getAccruedDebt(msg.sender);
+            totalBorrow = totalBorrow - loans[msg.sender];
+            loanInterestAccrueIndex += balance - loans[msg.sender];
+            delete loanAccrueTimeIndex[msg.sender];
+            delete loans[msg.sender];
+            repayInternal(balance);
+        }
         address[] memory assets = userCollateralAssets[msg.sender];
         delete userCollateralAssets[msg.sender];
         uint256 len = assets.length;

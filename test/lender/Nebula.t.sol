@@ -536,6 +536,25 @@ contract NebulaTest is BasicDeploy {
         vm.stopPrank();
     }
 
+    function test_ExitAll() public {
+        listAsset(address(wethInstance), address(oracleInstance));
+        supplyLiquidity(alice, 100_000e6);
+        vm.deal(bob, 10 ether);
+        supplyCollateral(bob, 10 ether);
+        borrow(bob, 10_000e6);
+        uint256 principal = nebulaInstance.getLoanPrincipal(bob);
+        assertTrue(principal == 10_000e6);
+        vm.warp(367 days);
+        vm.roll(367 days);
+        usdcInstance.drip(bob);
+        uint256 amount = nebulaInstance.getAccruedDebt(bob);
+        vm.startPrank(bob);
+        usdcInstance.approve(address(nebulaInstance), amount);
+        nebulaInstance.exitAll();
+        uint256 principalAfter = nebulaInstance.getLoanPrincipal(bob);
+        assertTrue(principalAfter == 0);
+    }
+
     function test_Exchange() public {
         listAsset(address(wethInstance), address(oracleInstance));
         supplyLiquidity(alice, 100_000e6);

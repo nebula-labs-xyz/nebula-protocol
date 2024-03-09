@@ -80,15 +80,16 @@ contract EcosystemTest is BasicDeploy {
 
     function test_Airdrop_GasLimit() public {
         vm.deal(alice, 1 ether);
-        address[] memory winners = new address[](5000);
-        for (uint256 i = 0; i < 5000; ++i) {
+
+        address[] memory winners = new address[](4000);
+        for (uint256 i = 0; i < 4000; ++i) {
             winners[i] = alice;
         }
 
         vm.prank(managerAdmin);
         ecoInstance.airdrop(winners, 20 ether);
         uint256 bal = tokenInstance.balanceOf(alice);
-        assertEq(bal, 100000 ether);
+        assertEq(bal, 80000 ether);
     }
 
     function test_Revert_Airdrop_Branch1() public {

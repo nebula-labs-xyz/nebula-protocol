@@ -10,4 +10,3 @@ contracts/ecosystem/YodaGovernor.sol
 contracts/ecosystem/YodaTimelock.sol
 contracts/lender/lib/YodaMath.sol
 contracts/lender/Nebula.sol
-contracts/liquidator/Liquidator.sol

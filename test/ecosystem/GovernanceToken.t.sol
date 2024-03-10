@@ -8,7 +8,7 @@ contract GovernanceTokenTest is BasicDeploy {
 
     event WithdrawEther(address to, uint256 amount);
     event WithdrawTokens(address to, uint256 amount);
-    event BridgeMint(address indexed to, uint256 amount);
+    event BridgeMint(address indexed src, address indexed to, uint256 amount);
     event TGE(uint256 amount);
 
     function setUp() public {
@@ -134,7 +134,7 @@ contract GovernanceTokenTest is BasicDeploy {
         tokenInstance.grantRole(BRIDGE_ROLE, bridge);
         vm.prank(bridge);
         vm.expectEmit();
-        emit BridgeMint(alice, 20 ether);
+        emit BridgeMint(bridge, alice, 20 ether);
         tokenInstance.bridgeMint(alice, 20 ether);
         assertEq(tokenInstance.balanceOf(alice), 100 ether);
     }

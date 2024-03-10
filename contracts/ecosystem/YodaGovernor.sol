@@ -7,7 +7,6 @@ pragma solidity 0.8.23;
  * @custom:security-contact security@nebula-labs.xyz
  */
 
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {GovernorUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
@@ -28,7 +27,6 @@ import {
 
 /// @custom:oz-upgrades
 contract YodaGovernor is
-    Initializable,
     GovernorUpgradeable,
     GovernorSettingsUpgradeable,
     GovernorCountingSimpleUpgradeable,
@@ -70,17 +68,19 @@ contract YodaGovernor is
         external
         initializer
     {
+        require(address(_token) != address(0x0), "ZERO_ADDRESS");
+        require(address(_timelock) != address(0x0), "ZERO_ADDRESS");
+        require(guardian != address(0x0), "ZERO_ADDRESS");
+
         __Governor_init("Yoda Governor");
         __GovernorSettings_init(7200, /* 1 day */ 50400, /* 1 week */ 20000e18);
         __GovernorCountingSimple_init();
-        require(address(_token) != address(0x0), "ZERO_ADDRESS");
         __GovernorVotes_init(_token);
         __GovernorVotesQuorumFraction_init(1);
-        require(address(_timelock) != address(0x0), "ZERO_ADDRESS");
         __GovernorTimelockControl_init(_timelock);
-        require(guardian != address(0x0), "ZERO_ADDRESS");
         __Ownable_init(guardian);
         __UUPSUpgradeable_init();
+
         ++uupsVersion;
         emit Initialized(msg.sender);
     }

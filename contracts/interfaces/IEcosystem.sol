@@ -15,16 +15,18 @@ interface IECOSYSTEM {
 
     /**
      * @dev Burn Event.
+     * @param src, sender
      * @param amount burned
      */
-    event Burn(uint256 amount);
+    event Burn(address indexed src, uint256 amount);
 
     /**
      * @dev Reward Event.
+     * @param src, sender
      * @param to beneficiary address
      * @param amount rewarded
      */
-    event Reward(address indexed to, uint256 amount);
+    event Reward(address indexed src, address indexed to, uint256 amount);
 
     /**
      * @dev Airdrop Event.
@@ -148,7 +150,7 @@ interface IECOSYSTEM {
      * @dev Getter for the UUPS version.
      * @return upgrade version (1,2,3)
      */
-    function version() external view returns (uint8);
+    function version() external view returns (uint32);
 
     /**
      * @dev Getter for the vesting contract addresses recorded by the AddPartner function.

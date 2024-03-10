@@ -214,4 +214,10 @@ interface IBRIDGE {
      * @return Token struct (IBRIDGE)
      */
     function getTokenInfo(address token) external view returns (Token memory);
+
+    /**
+     * @dev Getter for the UUPS version.
+     * @return upgrade version (1,2,3)
+     */
+    function version() external view returns (uint32);
 }

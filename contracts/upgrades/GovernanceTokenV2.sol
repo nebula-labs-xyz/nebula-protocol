@@ -7,7 +7,6 @@ pragma solidity 0.8.23;
  * @custom:security-contact security@nebula-labs.xyz
  */
 
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
@@ -24,7 +23,6 @@ import {
 
 /// @custom:oz-upgrades-from contracts/ecosystem/GovernanceToken.sol:GovernanceToken
 contract GovernanceTokenV2 is
-    Initializable,
     ERC20Upgradeable,
     ERC20BurnableUpgradeable,
     ERC20PausableUpgradeable,
@@ -54,20 +52,25 @@ contract GovernanceTokenV2 is
      * @param src sender address
      */
     event Initialized(address indexed src);
+
     /// @dev event emitted at TGE
     /// @param amount token amount
     event TGE(uint256 amount);
-    /// @dev event emitted when bridge triggers a mint
-    /// @param to beneficiary address
-    /// @param amount token amount
-    event BridgeMint(address indexed to, uint256 amount);
+    /**
+     * @dev event emitted when bridge triggers a mint
+     * @param src, sender
+     * @param to beneficiary address
+     * @param amount token amount
+     */
+    event BridgeMint(address indexed src, address indexed to, uint256 amount);
+
     /// @dev event emitted on UUPS upgrades
     /// @param src sender address
     /// @param implementation new implementation address
     event Upgrade(address indexed src, address indexed implementation);
+
     /// @dev CustomError message
     /// @param msg error desciption message
-
     error CustomError(string msg);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -142,7 +145,7 @@ contract GovernanceTokenV2 is
             revert CustomError({msg: "BRIDGE_PROBLEM"});
         }
 
-        emit BridgeMint(to, amount);
+        emit BridgeMint(msg.sender, to, amount);
         _mint(to, amount);
     }
 

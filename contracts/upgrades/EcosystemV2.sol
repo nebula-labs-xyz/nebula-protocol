@@ -57,7 +57,7 @@ contract EcosystemV2 is
     /// @dev partnership tokens issued so far
     uint256 public issuedPartnership;
     /// @dev number of UUPS upgrades
-    uint8 public version;
+    uint32 public version;
     /// @dev Addresses of vesting contracts issued to partners
     mapping(address src => address vesting) public vestingContracts;
     uint256[50] private __gap;
@@ -78,21 +78,27 @@ contract EcosystemV2 is
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
-        require(guardian != address(0x0), "ZERO_ADDRESS");
-        _grantRole(DEFAULT_ADMIN_ROLE, guardian);
-        require(pauser != address(0x0), "ZERO_ADDRESS");
-        _grantRole(PAUSER_ROLE, pauser);
-        require(token != address(0x0), "ZERO_ADDRESS");
-        tokenInstance = IYODA(payable(token));
-        uint256 initialSupply = tokenInstance.initialSupply();
-        require(initialSupply != 0, "SUPPLY_ERROR");
-        rewardSupply = (initialSupply * 26) / 100;
-        airdropSupply = (initialSupply * 10) / 100;
-        partnershipSupply = (initialSupply * 8) / 100;
-        maxReward = rewardSupply / 1000;
-        maxBurn = rewardSupply / 50;
-        ++version;
-        emit Initialized(msg.sender);
+        // require(guardian != address(0x0), "ZERO_ADDRESS");
+        // require(token != address(0x0), "ZERO_ADDRESS");
+        // require(initialSupply != 0, "SUPPLY_ERROR");
+        // require(pauser != address(0x0), "ZERO_ADDRESS");
+        if (token != address(0x0) && guardian != address(0x0) && pauser != address(0x0)) {
+            _grantRole(DEFAULT_ADMIN_ROLE, guardian);
+            _grantRole(PAUSER_ROLE, pauser);
+            tokenInstance = IYODA(payable(token));
+
+            uint256 initialSupply = tokenInstance.initialSupply();
+            rewardSupply = (initialSupply * 26) / 100;
+            airdropSupply = (initialSupply * 10) / 100;
+            partnershipSupply = (initialSupply * 8) / 100;
+            maxReward = rewardSupply / 1000;
+            maxBurn = rewardSupply / 50;
+
+            ++version;
+            emit Initialized(msg.sender);
+        } else {
+            revert CustomError("ZERO_ADDRESS_DETECTED");
+        }
     }
 
     /**
@@ -152,7 +158,7 @@ contract EcosystemV2 is
         }
 
         issuedReward += amount;
-        emit Reward(to, amount);
+        emit Reward(msg.sender, to, amount);
         TH.safeTransfer(tokenInstance, to, amount);
     }
 
@@ -168,7 +174,7 @@ contract EcosystemV2 is
 
         if (amount > maxBurn) revert CustomError("MAX_BURN_LIMIT");
         rewardSupply -= amount;
-        emit Burn(amount);
+        emit Burn(msg.sender, amount);
         tokenInstance.burn(amount);
     }
 

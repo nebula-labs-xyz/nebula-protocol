@@ -61,21 +61,22 @@ contract TeamManager is
      * @param guardian guardian address
      */
     function initialize(address token, address timelock_, address guardian) external initializer {
-        __Pausable_init();
-        __AccessControl_init();
-        __UUPSUpgradeable_init();
+        if (token != address(0x0) && timelock_ != address(0x0) && guardian != address(0x0)) {
+            __Pausable_init();
+            __AccessControl_init();
+            __UUPSUpgradeable_init();
 
-        require(guardian != address(0x0), "ZERO_ADDRESS");
-        _grantRole(DEFAULT_ADMIN_ROLE, guardian);
-        require(timelock_ != address(0x0), "ZERO_ADDRESS");
-        _grantRole(MANAGER_ROLE, timelock_);
+            _grantRole(DEFAULT_ADMIN_ROLE, guardian);
+            _grantRole(MANAGER_ROLE, timelock_);
 
-        timelock = timelock_;
-        require(token != address(0x0), "ZERO_ADDRESS");
-        ecosystemToken = IYODA(payable(token));
-        supply = (ecosystemToken.initialSupply() * 18) / 100;
-        ++version;
-        emit Initialized(msg.sender);
+            timelock = timelock_;
+            ecosystemToken = IYODA(payable(token));
+            supply = (ecosystemToken.initialSupply() * 18) / 100;
+            ++version;
+            emit Initialized(msg.sender);
+        } else {
+            revert CustomError("ZERO_ADDRESS_DETECTED");
+        }
     }
 
     /**

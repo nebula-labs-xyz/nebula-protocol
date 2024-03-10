@@ -45,9 +45,8 @@ contract TeamVesting is ITEAMVESTING, Context, Ownable2Step, ReentrancyGuard {
         payable
         Ownable(beneficiary)
     {
-        require(token != address(0x0) && beneficiary != address(0x0), "ZERO_ADDRESS");
+        require(token != address(0x0) && timelock != address(0x0) && beneficiary != address(0x0), "ZERO_ADDRESS");
         _token = token;
-        require(timelock != address(0x0), "ZERO_ADDRESS");
         _timelock = timelock;
         _start = startTimestamp;
         _duration = durationSeconds;

@@ -62,19 +62,23 @@ contract Treasury is
      * @param timelock address of timelock contract
      */
     function initialize(address guardian, address timelock) external initializer {
-        __Pausable_init();
-        __AccessControl_init();
-        __UUPSUpgradeable_init();
+        if (guardian != address(0x0) && timelock != address(0x0)) {
+            __Pausable_init();
+            __AccessControl_init();
+            __UUPSUpgradeable_init();
 
-        require(guardian != address(0x0), "ZERO_ADDRESS");
-        _grantRole(DEFAULT_ADMIN_ROLE, guardian);
-        require(timelock != address(0x0), "ZERO_ADDRESS");
-        _grantRole(MANAGER_ROLE, timelock);
+            require(guardian != address(0x0), "ZERO_ADDRESS");
+            _grantRole(DEFAULT_ADMIN_ROLE, guardian);
+            require(timelock != address(0x0), "ZERO_ADDRESS");
+            _grantRole(MANAGER_ROLE, timelock);
 
-        _start = SafeCast.toUint64(block.timestamp - 219 days);
-        _duration = SafeCast.toUint64(1095 days + 219 days);
-        version++;
-        emit Initialized(msg.sender);
+            _start = SafeCast.toUint64(block.timestamp - 219 days);
+            _duration = SafeCast.toUint64(1095 days + 219 days);
+            version++;
+            emit Initialized(msg.sender);
+        } else {
+            revert CustomError("ZERO_ADDRESS_DETECTED");
+        }
     }
 
     /**

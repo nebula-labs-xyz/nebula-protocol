@@ -88,25 +88,27 @@ contract InvestmentManager is
         external
         initializer
     {
-        __Pausable_init();
-        __AccessControl_init();
-        __UUPSUpgradeable_init();
+        if (
+            token != address(0x0) && timelock_ != address(0x0) && treasury_ != address(0x0) && weth_ != address(0x0)
+                && guardian != address(0x0)
+        ) {
+            __Pausable_init();
+            __AccessControl_init();
+            __UUPSUpgradeable_init();
 
-        require(guardian != address(0x0), "ZERO_ADDRESS");
-        _grantRole(DEFAULT_ADMIN_ROLE, guardian);
-        require(timelock_ != address(0x0), "ZERO_ADDRESS");
-        _grantRole(MANAGER_ROLE, timelock_);
-        _grantRole(PAUSER_ROLE, guardian);
-        require(token != address(0x0), "ZERO_ADDRESS");
-        ecosystemToken = IYODA(payable(token));
-        require(weth_ != address(0x0), "ZERO_ADDRESS");
-        wethContract = IWETH9(payable(weth_));
+            _grantRole(DEFAULT_ADMIN_ROLE, guardian);
+            _grantRole(MANAGER_ROLE, timelock_);
+            _grantRole(PAUSER_ROLE, guardian);
+            ecosystemToken = IYODA(payable(token));
+            wethContract = IWETH9(payable(weth_));
 
-        timelock = timelock_;
-        require(treasury_ != address(0x0), "ZERO_ADDRESS");
-        treasury = treasury_;
-        version++;
-        emit Initialized(msg.sender);
+            timelock = timelock_;
+            treasury = treasury_;
+            version++;
+            emit Initialized(msg.sender);
+        } else {
+            revert CustomError("ZERO_ADDRESS_DETECTED");
+        }
     }
 
     /**

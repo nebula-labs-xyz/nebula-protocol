@@ -4,8 +4,8 @@ pragma solidity ^0.8.23;
 import {BasicDeploy} from "../BasicDeploy.sol";
 
 contract EcosystemTest is BasicDeploy {
-    event Burn(uint256 amount);
-    event Reward(address indexed to, uint256 amount);
+    event Burn(address indexed src, uint256 amount);
+    event Reward(address indexed src, address indexed to, uint256 amount);
     event AirDrop(address[] addresses, uint256 amount);
     event AddPartner(address indexed account, address indexed vesting, uint256 amount);
 
@@ -147,7 +147,7 @@ contract EcosystemTest is BasicDeploy {
         ecoInstance.grantRole(REWARDER_ROLE, managerAdmin);
         vm.startPrank(managerAdmin);
         vm.expectEmit(address(ecoInstance));
-        emit Reward(assetRecipient, 20 ether);
+        emit Reward(managerAdmin, assetRecipient, 20 ether);
         ecoInstance.reward(assetRecipient, 20 ether);
         vm.stopPrank();
         uint256 bal = tokenInstance.balanceOf(assetRecipient);
@@ -216,7 +216,7 @@ contract EcosystemTest is BasicDeploy {
         uint256 startBal = tokenInstance.totalSupply();
         vm.startPrank(managerAdmin);
         vm.expectEmit(address(ecoInstance));
-        emit Burn(20 ether);
+        emit Burn(address(managerAdmin), 20 ether);
         ecoInstance.burn(20 ether);
         vm.stopPrank();
         uint256 endBal = tokenInstance.totalSupply();

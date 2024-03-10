@@ -20,7 +20,6 @@ import {INEBULA} from "../interfaces/INebula.sol";
 import {IECOSYSTEM} from "../interfaces/IEcosystem.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IERC20, SafeERC20 as TH} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -33,7 +32,6 @@ import {ERC20PausableUpgradeable} from
 /// @custom:oz-upgrades
 contract Nebula is
     INEBULA,
-    Initializable,
     ERC20Upgradeable,
     ERC20PausableUpgradeable,
     AccessControlUpgradeable,
@@ -127,34 +125,37 @@ contract Nebula is
         address timelock_,
         address guardian
     ) external initializer {
-        __ERC20_init("Nebula Coin", "NBL");
-        __ERC20Pausable_init();
-        __AccessControl_init();
-        __UUPSUpgradeable_init();
+        if (
+            usdc != address(0x0) && govToken != address(0x0) && ecosystem != address(0x0) && treasury_ != address(0x0)
+                && timelock_ != address(0x0) && guardian != address(0x0)
+        ) {
+            __ERC20_init("Nebula Coin", "NBL");
+            __ERC20Pausable_init();
+            __AccessControl_init();
+            __UUPSUpgradeable_init();
 
-        require(guardian != address(0x0), "ZERO_ADDRESS");
-        _grantRole(DEFAULT_ADMIN_ROLE, guardian);
-        _grantRole(PAUSER_ROLE, guardian);
-        require(timelock_ != address(0x0), "ZERO_ADDRESS");
-        _grantRole(MANAGER_ROLE, timelock_);
-        require(usdc != address(0x0), "ZERO_ADDRESS");
-        usdcInstance = IERC20(usdc);
-        require(govToken != address(0x0), "ZERO_ADDRESS");
-        tokenInstance = IERC20(govToken);
-        require(ecosystem != address(0x0), "ZERO_ADDRESS");
-        ecosystemInstance = IECOSYSTEM(payable(ecosystem));
-        require(treasury_ != address(0x0), "ZERO_ADDRESS");
-        treasury = treasury_;
-        timelock = timelock_;
+            _grantRole(DEFAULT_ADMIN_ROLE, guardian);
+            _grantRole(PAUSER_ROLE, guardian);
+            _grantRole(MANAGER_ROLE, timelock_);
 
-        targetReward = 2_000 ether;
-        rewardInterval = 180 days;
-        rewardableSupply = 100_000 * WAD;
-        baseBorrowRate = 0.06e6;
-        baseProfitTarget = 0.01e6;
-        liquidatorThreshold = 20_000 ether;
-        ++version;
-        emit Initialized(msg.sender);
+            usdcInstance = IERC20(usdc);
+            tokenInstance = IERC20(govToken);
+            ecosystemInstance = IECOSYSTEM(payable(ecosystem));
+
+            treasury = treasury_;
+            timelock = timelock_;
+
+            targetReward = 2_000 ether;
+            rewardInterval = 180 days;
+            rewardableSupply = 100_000 * WAD;
+            baseBorrowRate = 0.06e6;
+            baseProfitTarget = 0.01e6;
+            liquidatorThreshold = 20_000 ether;
+            ++version;
+            emit Initialized(msg.sender);
+        } else {
+            revert CustomError("ZERO_ADDRESS_DETECTED");
+        }
     }
 
     /**
@@ -199,7 +200,7 @@ contract Nebula is
      */
     function exchange(uint256 amount) external nonReentrant {
         uint256 userBal = balanceOf(msg.sender);
-        require(userBal > 0, "ERR_INSUFFICIENT_BALANCE");
+        require(userBal != 0, "ERR_INSUFFICIENT_BALANCE");
         if (userBal <= amount) amount = userBal;
 
         uint256 fee;
@@ -239,9 +240,9 @@ contract Nebula is
         uint256 rateRay = annualRateToRay(getBorrowRate());
         uint256 balance;
 
-        if (loans[msg.sender] > 0) {
+        if (loans[msg.sender] != 0) {
             uint256 time = block.timestamp - loanAccrueTimeIndex[msg.sender];
-            require(time > 0, "ERR_TIMESPAN");
+            require(time != 0, "ERR_TIMESPAN");
             balance = accrueInterest(loans[msg.sender], rateRay, time);
         }
 
@@ -262,7 +263,7 @@ contract Nebula is
      * Emits a {Repay} event.
      */
     function repay(uint256 amount) external nonReentrant whenNotPaused {
-        require(loans[msg.sender] > 0, "ERR_NO_EXISTING_LOAN");
+        require(loans[msg.sender] != 0, "ERR_NO_EXISTING_LOAN");
         uint256 balance = getAccruedDebt(msg.sender);
 
         if (amount >= balance) {
@@ -281,11 +282,27 @@ contract Nebula is
     }
 
     /**
+     * @dev Allows borrower to repay total debt.
+     *
+     * Emits a {Repay} event.
+     */
+    function repayMax() external nonReentrant whenNotPaused {
+        require(loans[msg.sender] != 0, "ERR_NO_EXISTING_LOAN");
+        uint256 balance = getAccruedDebt(msg.sender);
+        totalBorrow = totalBorrow - loans[msg.sender];
+        loanInterestAccrueIndex += balance - loans[msg.sender];
+        delete loanAccrueTimeIndex[msg.sender];
+        delete loans[msg.sender];
+
+        repayInternal(balance);
+    }
+    /**
      * @dev Allows borrower to supply collateral.
      * @param asset address
      * @param amount to be supplied
      * Emits a {SupplyCollateral} event.
      */
+
     function supplyCollateral(address asset, uint256 amount) external nonReentrant whenNotPaused {
         require(listedAsset.contains(asset), "ERR_UNSUPPORTED_ASSET");
         Asset memory token = assetInfo[asset];
@@ -341,7 +358,7 @@ contract Nebula is
      * Emits a {WithdrawCollateral} event.
      */
     function exitAll() external nonReentrant whenNotPaused {
-        if (loans[msg.sender] > 0) {
+        if (loans[msg.sender] != 0) {
             uint256 balance = getAccruedDebt(msg.sender);
             totalBorrow = totalBorrow - loans[msg.sender];
             loanInterestAccrueIndex += balance - loans[msg.sender];
@@ -355,7 +372,7 @@ contract Nebula is
         if (len <= 20) {
             for (uint256 i; i < len; ++i) {
                 uint256 amount = collateral[msg.sender][assets[i]];
-                if (amount > 0) {
+                if (amount != 0) {
                     IERC20 assetContract = IERC20(assets[i]);
                     collateral[msg.sender][assets[i]] = 0;
                     emit WithdrawCollateral(msg.sender, assets[i], amount);
@@ -392,7 +409,7 @@ contract Nebula is
         if (len <= 20) {
             for (uint256 i; i < len; ++i) {
                 uint256 amount = collateral[src][assets[i]];
-                if (amount > 0) {
+                if (amount != 0) {
                     collateral[src][assets[i]] = 0;
                     TH.safeTransfer(IERC20(assets[i]), msg.sender, amount);
                 }
@@ -623,7 +640,7 @@ contract Nebula is
 
         for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
-            if (amount > 0) {
+            if (amount != 0) {
                 Asset memory token = assetInfo[assets[i]];
                 uint256 price = getAssetPrice(token.oracleUSD);
                 liqLevel += (amount * price * token.liquidationThreshold * WAD) / 10 ** token.decimals / 1000
@@ -644,22 +661,6 @@ contract Nebula is
         uint256 baseAmount = (balanceOf(src) * totalBase) / supply;
 
         return block.timestamp - rewardInterval >= liquidityAccrueTimeIndex[src] && baseAmount >= rewardableSupply;
-    }
-
-    /**
-     * @dev Allows borrower to repay total debt.
-     *
-     * Emits a {Repay} event.
-     */
-    function repayMax() public nonReentrant whenNotPaused {
-        require(loans[msg.sender] > 0, "ERR_NO_EXISTING_LOAN");
-        uint256 balance = getAccruedDebt(msg.sender);
-        totalBorrow = totalBorrow - loans[msg.sender];
-        loanInterestAccrueIndex += balance - loans[msg.sender];
-        delete loanAccrueTimeIndex[msg.sender];
-        delete loans[msg.sender];
-
-        repayInternal(balance);
     }
 
     /**
@@ -696,7 +697,7 @@ contract Nebula is
         uint256 defaultSupply = WAD;
         uint256 utilization = getUtilization();
         if (utilization == 0) return baseBorrowRate;
-        if (loans[msg.sender] > 0) {
+        if (loans[msg.sender] != 0) {
             duration = block.timestamp - loanAccrueTimeIndex[msg.sender];
         }
 
@@ -716,7 +717,7 @@ contract Nebula is
      */
     function getAccruedDebt(address src) public view returns (uint256 d) {
         uint256 time = block.timestamp - loanAccrueTimeIndex[src];
-        require(time > 0, "ERR_TIMESPAN");
+        require(time != 0, "ERR_TIMESPAN");
         uint256 rateRay = annualRateToRay(getBorrowRate());
         d = accrueInterest(loans[src], rateRay, time);
     }
@@ -735,7 +736,7 @@ contract Nebula is
 
         for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
-            if (amount > 0) {
+            if (amount != 0) {
                 Asset memory token = assetInfo[assets[i]];
                 uint256 price = getAssetPrice(token.oracleUSD);
                 cValue += (amount * price * token.liquidationThreshold * WAD) / 10 ** token.decimals / 1000
@@ -772,7 +773,7 @@ contract Nebula is
 
         for (uint256 i; i < len; ++i) {
             uint256 amount = collateral[src][assets[i]];
-            if (amount > 0) {
+            if (amount != 0) {
                 Asset memory token = assetInfo[assets[i]];
                 uint256 price = getAssetPrice(token.oracleUSD);
                 value += (amount * price * token.borrowThreshold * WAD) / 10 ** token.decimals / 1000

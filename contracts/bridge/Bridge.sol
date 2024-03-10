@@ -28,8 +28,8 @@ contract Bridge is
 {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
-    /// @dev AccessControl Pauser Role
 
+    /// @dev AccessControl Pauser Role
     bytes32 internal constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     /// @dev AccessControl Manager Role
     bytes32 internal constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -50,7 +50,7 @@ contract Bridge is
     /// @dev Transaction by ID mapping
     mapping(uint256 id => Transaction) private transactions;
     /// @dev number of UUPS upgrades
-    uint8 public version;
+    uint32 public version;
     uint256[50] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor

@@ -12,11 +12,11 @@ import {IYODAMATH} from "../../interfaces/IYodaMath.sol";
 
 contract YodaMath is IYODAMATH {
     /// @dev base scale
-    uint256 public constant WAD = 1e6;
+    uint256 internal constant WAD = 1e6;
     /// @dev ray scale
-    uint256 public constant RAY = 1e27;
+    uint256 internal constant RAY = 1e27;
     /// @dev seconds per year on ray scale
-    uint256 public constant SECONDS_PER_YEAR_RAY = 365 * 86400 * RAY;
+    uint256 internal constant SECONDS_PER_YEAR_RAY = 365 * 86400 * RAY;
 
     /**
      * @dev rmul function
@@ -46,7 +46,7 @@ contract YodaMath is IYODAMATH {
      */
     function rpow(uint256 x, uint256 n) public pure returns (uint256 r) {
         r = n % 2 == 1 ? x : RAY;
-        while (n > 0) {
+        while (n != 0) {
             if (n % 2 == 1) {
                 r = rmul(r, x);
                 n -= 1;

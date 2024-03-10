@@ -667,11 +667,7 @@ contract Nebula is
      * @return u - current utilization
      */
     function getUtilization() public view returns (uint256 u) {
-        if (totalBase == 0 || totalBorrow == 0) {
-            u = 0;
-        } else {
-            u = (WAD * totalBorrow) / totalBase;
-        }
+        (totalBase == 0 || totalBorrow == 0) ? u = 0 : u = (WAD * totalBorrow) / totalBase;
     }
 
     /**

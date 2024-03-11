@@ -216,14 +216,16 @@ contract EcosystemV2 is
         }
 
         if (len <= 4000) {
+            verified = true;
             for (uint256 i; i < len; ++i) {
-                if (winners[i].balance < 0.2e18) verified = false;
+                if (winners[i].balance < 0.2e18) {
+                    verified = false;
+                    break;
+                }
             }
         } else {
             revert CustomError("GAS_LIMIT");
         }
-
-        verified = true;
     }
 
     /// @inheritdoc UUPSUpgradeable

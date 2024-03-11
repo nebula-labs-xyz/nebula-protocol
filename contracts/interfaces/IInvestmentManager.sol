@@ -53,7 +53,7 @@ interface IINVESTOR {
      * @dev RoundClosed Event.
      * @param round, number
      */
-    event RoundClosed(uint32 round);
+    event RoundClosed(address indexed src, uint32 round);
 
     /**
      * @dev RoundCancelled Event.

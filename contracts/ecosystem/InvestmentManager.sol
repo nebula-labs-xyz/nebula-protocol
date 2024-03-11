@@ -200,8 +200,8 @@ contract InvestmentManager is
         deployVestingContracts(round_);
         wethContract.withdraw(current.etherInvested);
 
-        emit RoundClosed(round_);
-        (bool success,) = treasury.call{value: current.etherInvested}("");
+        emit RoundClosed(msg.sender, round_);
+        (bool success,) = payable(treasury).call{value: current.etherInvested}("");
         if (!success) revert CustomError("WITHDRAWAL_FAILED");
     }
 

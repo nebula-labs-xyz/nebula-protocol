@@ -75,6 +75,7 @@ contract Bridge is
         _grantRole(PAUSER_ROLE, guardian);
 
         ++version;
+        emit Initialized(msg.sender);
     }
 
     /**

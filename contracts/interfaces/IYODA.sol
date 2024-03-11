@@ -18,10 +18,16 @@ interface IYODA is IERC20, IERC20Metadata {
 
     /**
      * @dev BridgeMint Event.
+     * @param src sender address
      * @param to beneficiary address
      * @param amount to bridge
      */
-    event BridgeMint(address to, uint256 amount);
+    event BridgeMint(address indexed src, address indexed to, uint256 amount);
+
+    /// @dev event emitted on UUPS upgrades
+    /// @param src sender address
+    /// @param implementation new implementation address
+    event Upgrade(address indexed src, address indexed implementation);
 
     /**
      * @dev UUPS deploy proxy initializer.

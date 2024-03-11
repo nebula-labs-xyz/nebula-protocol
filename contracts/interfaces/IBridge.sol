@@ -93,7 +93,14 @@ interface IBRIDGE {
      * @param amount, amount bridged
      * @param destChainId, destination chain id
      */
-    event Bridged(uint256 transactionID, address from, address to, address token, uint256 amount, uint256 destChainId);
+    event Bridged(
+        uint256 transactionID,
+        address indexed from,
+        address indexed to,
+        address indexed token,
+        uint256 amount,
+        uint256 destChainId
+    );
 
     /**
      * @dev Custom Error.

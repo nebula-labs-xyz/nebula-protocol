@@ -14,7 +14,7 @@ interface IERC20Bridgable is IERC20 {
      * @param to beneficiary address
      * @param amount rewarded
      */
-    event BridgeMint(address to, uint256 amount);
+    event BridgeMint(address indexed to, uint256 amount);
 
     /**
      * @dev Burns tokens.

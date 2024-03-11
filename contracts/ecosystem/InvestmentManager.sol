@@ -234,7 +234,7 @@ contract InvestmentManager is
                 TH.safeTransfer(IERC20(address(wethContract)), investors[i], item.etherAmount);
             }
             totalAllocation = total;
-            withdrawTokens(current.tokenAllocation);
+            withdrawTokens(round_, current.tokenAllocation);
         } else {
             revert CustomError("GAS_LIMIT");
         }
@@ -342,7 +342,8 @@ contract InvestmentManager is
      * @dev internal, withdraws tokens back to treasury when the round is cancelled.
      * @param amount amount of tokens to send back to treasury
      */
-    function withdrawTokens(uint256 amount) internal {
+    function withdrawTokens(uint32 round_, uint256 amount) internal {
+        emit WithdrawTokens(round_, msg.sender, amount);
         TH.safeTransfer(ecosystemToken, treasury, amount);
     }
 

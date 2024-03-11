@@ -97,6 +97,14 @@ interface IINVESTOR {
     event Invest(uint32 round, address indexed src, uint256 amount);
 
     /**
+     * @dev Withdraw Tokens Event
+     * @param round, number
+     * @param src, address
+     * @param amount, amount
+     */
+    event WithdrawTokens(uint32 round, address indexed src, uint256 amount);
+
+    /**
      * @dev Upgrade Event.
      * @param src sender address
      * @param implementation address

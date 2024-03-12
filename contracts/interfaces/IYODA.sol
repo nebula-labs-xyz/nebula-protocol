@@ -91,5 +91,5 @@ interface IYODA is IERC20, IERC20Metadata {
      * @dev Getter for the UUPS version, incremented with every upgrade.
      * @return version number (1,2,3)
      */
-    function version() external view returns (uint8);
+    function version() external view returns (uint32);
 }

@@ -55,7 +55,7 @@ interface ITEAMMANAGER {
      * @dev Getter for the UUPS version, incremented each time an upgrade occurs.
      * @return version number (1,2,3)
      */
-    function version() external view returns (uint8);
+    function version() external view returns (uint32);
 
     /**
      * @dev Getter for the amount of tokens allocated to team member.

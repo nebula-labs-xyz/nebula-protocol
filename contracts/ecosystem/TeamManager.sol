@@ -42,7 +42,7 @@ contract TeamManager is
     /// @dev timelock address
     address public timelock;
     /// @dev number of UUPS upgrades
-    uint8 public version;
+    uint32 public version;
     /// @dev token allocations to team members
     mapping(address src => uint256 amount) public allocations;
     /// @dev vesting contract addresses for team members

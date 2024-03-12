@@ -42,9 +42,9 @@ contract GovernanceTokenV2 is
     /// @dev max bridge passthrough amount
     uint256 public maxBridge;
     /// @dev number of UUPS upgrades
-    uint8 public version;
+    uint32 public version;
     /// @dev tge initialized variable
-    uint8 public tge;
+    uint32 public tge;
     uint256[50] private __gap;
 
     /**

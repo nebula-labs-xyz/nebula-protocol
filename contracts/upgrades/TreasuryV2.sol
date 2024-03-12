@@ -41,7 +41,7 @@ contract TreasuryV2 is
     /// @dev duration seconds
     uint64 private _duration;
     /// @dev UUPS version
-    uint8 public version;
+    uint32 public version;
     /// @dev token amounts released so far
     mapping(address token => uint256) private _erc20Released;
     uint256[50] private __gap;

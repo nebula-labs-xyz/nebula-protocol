@@ -37,7 +37,7 @@ contract YodaGovernorV2 is
     UUPSUpgradeable
 {
     /// @dev UUPS version tracker
-    uint8 public uupsVersion;
+    uint32 public uupsVersion;
     uint256[50] private __gap;
 
     /**

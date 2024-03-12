@@ -52,7 +52,7 @@ interface ITREASURY {
      * @dev UUPS version incremented every upgrade
      * @return version number
      */
-    function version() external returns (uint8);
+    function version() external returns (uint32);
 
     /**
      * @dev Pause contract

@@ -36,6 +36,8 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
     /// @dev Uniswap router instance
     ISwapRouter public immutable UNISWAP_ROUTER;
 
+    /// @dev CustomError message
+    /// @param msg error desciption message
     error CustomError(string msg);
 
     /**
@@ -170,7 +172,7 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
     }
 
     /**
-     * @dev Throws if the sender is not the timelock.
+     * @dev Throws if the sender is not the balancer Vault.
      */
     function _checkVault() internal view virtual {
         if (address(BALANCER_VAULT) != _msgSender()) {

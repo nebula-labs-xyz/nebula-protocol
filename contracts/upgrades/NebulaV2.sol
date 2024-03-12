@@ -296,13 +296,13 @@ contract NebulaV2 is
 
         repayInternal(balance);
     }
+
     /**
      * @dev Allows borrower to supply collateral.
      * @param asset address
      * @param amount to be supplied
      * Emits a {SupplyCollateral} event.
      */
-
     function supplyCollateral(address asset, uint256 amount) external nonReentrant whenNotPaused {
         require(listedAsset.contains(asset), "ERR_UNSUPPORTED_ASSET");
         Asset memory token = assetInfo[asset];
@@ -436,8 +436,8 @@ contract NebulaV2 is
      * Emits a {UpdateBaseBorrowRate} event.
      */
     function updateBaseBorrowRate(uint256 rate) external onlyRole(MANAGER_ROLE) {
-        emit UpdateBaseBorrowRate(rate);
         require(rate >= 0.01e6, "ERR_INVALID_AMOUNT");
+        emit UpdateBaseBorrowRate(rate);
         baseBorrowRate = rate;
     }
 

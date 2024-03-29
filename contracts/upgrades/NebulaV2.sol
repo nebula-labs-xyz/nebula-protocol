@@ -196,7 +196,7 @@ contract NebulaV2 is
 
     /**
      * @dev Exchange Nebula tokens back to USDC, receive yield.
-     * @param amount to be exchanged in Nebula yield token (18 decimals)
+     * @param amount to be exchanged in Nebula yield token (6 decimals)
      */
     function exchange(uint256 amount) external nonReentrant {
         uint256 userBal = balanceOf(msg.sender);

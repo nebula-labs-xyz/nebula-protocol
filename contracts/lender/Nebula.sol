@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.23;
 /**
- * ,,       ,,  ,,    ,,,    ,,   ,,,      ,,,    ,,,   ,,,          ,,,
+ *      ,,       ,,  ,,    ,,,    ,,   ,,,      ,,,    ,,,   ,,,          ,,,
  *      ███▄     ██  ███▀▀▀███▄   ██▄██▀▀██▄    ██▌     ██▌  ██▌        ▄▄███▄▄
  *     █████,   ██  ██▌          ██▌     └██▌  ██▌     ██▌  ██▌        ╟█   ╙██
  *     ██ └███ ██  ██▌└██╟██   l███▀▄███╟█    ██      ╟██  ╟█i        ▐█▌█▀▄██╟
@@ -204,7 +204,9 @@ contract Nebula is
         if (userBal <= amount) amount = userBal;
 
         uint256 fee;
-        uint256 target = (amount * baseProfitTarget) / WAD; //1% commission
+        uint256 supply = totalSupply();
+        uint256 baseAmount = (amount * totalBase) / supply;
+        uint256 target = (baseAmount * baseProfitTarget) / WAD; //1% commission
         uint256 total = usdcInstance.balanceOf(address(this)) + totalBorrow;
 
         if (total >= totalBase + target) {
@@ -215,15 +217,13 @@ contract Nebula is
             _mint(treasury, fee);
         }
 
-        uint256 supply = totalSupply();
-        uint256 value = (amount * total) / supply;
-        uint256 baseAmount = (amount * totalBase) / (supply - fee);
+        uint256 value = (amount * total) / totalSupply();
 
         totalBase -= baseAmount;
         withdrawnLiquidity += value;
         supplyInterestAccrueIndex += value - baseAmount;
 
-        rewardInternal(baseAmount);
+        _rewardInternal(baseAmount);
         _burn(msg.sender, amount);
 
         emit Exchange(msg.sender, amount, value);
@@ -278,7 +278,7 @@ contract Nebula is
         totalBorrow = totalBorrow + (balance - amount) - loans[msg.sender];
         loans[msg.sender] = balance - amount;
 
-        repayInternal(amount);
+        _repayInternal(amount);
     }
 
     /**
@@ -294,7 +294,7 @@ contract Nebula is
         delete loanAccrueTimeIndex[msg.sender];
         delete loans[msg.sender];
 
-        repayInternal(balance);
+        _repayInternal(balance);
     }
 
     /**
@@ -364,7 +364,7 @@ contract Nebula is
             loanInterestAccrueIndex += balance - loans[msg.sender];
             delete loanAccrueTimeIndex[msg.sender];
             delete loans[msg.sender];
-            repayInternal(balance);
+            _repayInternal(balance);
         }
         address[] memory assets = userCollateralAssets[msg.sender];
         delete userCollateralAssets[msg.sender];
@@ -673,19 +673,17 @@ contract Nebula is
 
     /**
      * @dev Getter for the current supply rate.
-     * @return the current supply rate
+     * @return the current supply rate (6 decimals)
      */
     function getSupplyRate() public view returns (uint256) {
+        if (totalBase == 0) return 0;
         uint256 fee;
         uint256 supply = totalSupply();
-        uint256 target = (supply * baseProfitTarget) / WAD; //1% commission
+        uint256 target = (supply * baseProfitTarget) / WAD; // 1% commission
         uint256 total = usdcInstance.balanceOf(address(this)) + totalBorrow;
-        if (total >= totalBase + target) {
-            fee = target;
-        }
+        total >= totalBase + target ? fee = target : fee = 0;
 
-        if (total == 0 || supply == 0) return 0;
-        return ((WAD * total) / (supply + fee)) - WAD; // r = 0.05e6;
+        return ((WAD * total) / (totalBase + fee)) - WAD; // r = 0.05e6;
     }
 
     /**
@@ -809,7 +807,7 @@ contract Nebula is
      * @dev internal repay function.
      * @param amount to be repayed
      */
-    function repayInternal(uint256 amount) internal {
+    function _repayInternal(uint256 amount) internal {
         emit Repay(msg.sender, amount);
         TH.safeTransferFrom(usdcInstance, msg.sender, address(this), amount);
     }
@@ -818,7 +816,7 @@ contract Nebula is
      * @dev Calculates if reward is due to lenders on exchange operation
      * @param amount to be exchanged
      */
-    function rewardInternal(uint256 amount) internal {
+    function _rewardInternal(uint256 amount) internal {
         bool rewardable =
             block.timestamp - rewardInterval >= liquidityAccrueTimeIndex[msg.sender] && amount >= rewardableSupply;
 

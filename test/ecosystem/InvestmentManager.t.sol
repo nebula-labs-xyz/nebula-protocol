@@ -17,7 +17,7 @@ contract InvestmentManagerTest is BasicDeploy {
         deployComplete();
         assertEq(tokenInstance.totalSupply(), 0);
         // this is the TGE
-        vm.prank(guardian);
+        vm.startPrank(guardian);
         tokenInstance.initializeTGE(address(ecoInstance), address(treasuryInstance));
         uint256 ecoBal = tokenInstance.balanceOf(address(ecoInstance));
         uint256 treasuryBal = tokenInstance.balanceOf(address(treasuryInstance));
@@ -43,8 +43,10 @@ contract InvestmentManagerTest is BasicDeploy {
         imInstance = InvestmentManager(proxy);
         address implementation = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(imInstance) == implementation);
-        vm.prank(guardian);
+
         treasuryInstance.grantRole(MANAGER_ROLE, address(timelockInstance));
+        //imInstance.grantRole(MANAGER_ROLE, address(guardian));//
+        vm.stopPrank();
     }
 
     function test_Revert_Initialize() public {
@@ -74,8 +76,20 @@ contract InvestmentManagerTest is BasicDeploy {
         createRound(100 ether, 500_000 ether);
     }
 
+    function test_addInvestorAllocation() public {
+        createRound(100 ether, 500_000 ether);
+        vm.prank(guardian);
+        imInstance.addInvestorAllocation(0, alice, 10 ether, 50_000 ether);
+        IINVESTOR.Investment memory investment = imInstance.getInvestorAllocation(0, alice);
+        assertEq(investment.etherAmount, 10 ether);
+        assertEq(investment.tokenAmount, 50_000 ether);
+    }
+
     function test_investEth() public returns (bool success) {
         createRound(100 ether, 500_000 ether);
+        vm.prank(guardian);
+        imInstance.addInvestorAllocation(0, alice, 10 ether, 50_000 ether);
+
         vm.deal(alice, 10 ether);
         vm.prank(alice);
         (success,) = payable(address(imInstance)).call{value: 10 ether}("");
@@ -89,6 +103,8 @@ contract InvestmentManagerTest is BasicDeploy {
 
     function test_investWETH() public returns (bool success) {
         createRound(100 ether, 500_000 ether);
+        vm.prank(guardian);
+        imInstance.addInvestorAllocation(0, alice, 10 ether, 50_000 ether);
         vm.deal(alice, 10 ether);
         vm.startPrank(alice);
         (success,) = payable(address(wethInstance)).call{value: 10 ether}("");
@@ -105,6 +121,8 @@ contract InvestmentManagerTest is BasicDeploy {
 
     function test_cancelInvestment() public returns (bool success) {
         createRound(100 ether, 500_000 ether);
+        vm.prank(guardian);
+        imInstance.addInvestorAllocation(0, alice, 10 ether, 50_000 ether);
         uint256 amount = 10 ether;
         vm.deal(alice, amount);
         vm.prank(alice);
@@ -129,6 +147,8 @@ contract InvestmentManagerTest is BasicDeploy {
 
     function test_Revert_cancelRound_Branch1() public returns (bool success) {
         createRound(100 ether, 500_000 ether);
+        vm.prank(guardian);
+        imInstance.addInvestorAllocation(0, alice, 10 ether, 50_000 ether);
         uint256 amount = 10 ether;
         vm.deal(alice, amount);
         vm.prank(alice);
@@ -148,6 +168,9 @@ contract InvestmentManagerTest is BasicDeploy {
 
     function test_Revert_cancelRound_Branch2() public returns (bool success) {
         createRound(100 ether, 500_000 ether);
+        vm.prank(guardian);
+        imInstance.addInvestorAllocation(0, alice, 100 ether, 500_000 ether);
+
         uint256 amount = 100 ether;
         vm.deal(alice, amount);
         vm.prank(alice);
@@ -167,6 +190,9 @@ contract InvestmentManagerTest is BasicDeploy {
     function test_Revert_cancelRound_Branch3() public returns (bool success) {
         createRound(100 ether, 500_000 ether);
         uint256 amount = 10 ether;
+        vm.prank(guardian);
+        imInstance.addInvestorAllocation(0, alice, amount, 50_000 ether);
+
         vm.deal(alice, amount);
         vm.prank(alice);
         (success,) = payable(address(imInstance)).call{value: amount}("");
@@ -183,20 +209,27 @@ contract InvestmentManagerTest is BasicDeploy {
     }
 
     function test_cancelRound() public returns (bool success) {
-        uint256 allocation = 500_000 ether;
-        createRound(100 ether, allocation);
-        uint256 amount = 10 ether;
+        uint256 raiseAmount = 100 ether;
+        uint256 roundAllocation = 500_000 ether;
+        createRound(raiseAmount, roundAllocation);
+        uint256 amount = raiseAmount / 10;
+        uint256 allocation = roundAllocation / 10;
+        vm.prank(guardian);
+        imInstance.addInvestorAllocation(0, alice, amount, allocation);
+
         vm.deal(alice, amount * 2);
         vm.prank(alice);
         (success,) = payable(address(imInstance)).call{value: amount}("");
 
         IINVESTOR.Round memory roundInfo = imInstance.getRoundInfo(0);
         assertEq(roundInfo.etherTarget, 100 ether);
-        assertEq(roundInfo.tokenAllocation, allocation);
+        assertEq(roundInfo.tokenAllocation, roundAllocation);
         assertEq(roundInfo.etherInvested, amount);
         assertEq(roundInfo.participants, 1);
 
-        createRound(400 ether, allocation);
+        createRound(400 ether, roundAllocation);
+        vm.prank(guardian);
+        imInstance.addInvestorAllocation(1, alice, amount, allocation);
         vm.startPrank(alice);
         (success,) = payable(address(wethInstance)).call{value: amount}("");
         wethInstance.approve(address(imInstance), amount);
@@ -210,9 +243,9 @@ contract InvestmentManagerTest is BasicDeploy {
         uint256 aliceBal = wethInstance.balanceOf(alice);
         uint256 imBal = tokenInstance.balanceOf(address(imInstance));
 
-        assertEq(imBal, allocation);
+        assertEq(imBal, roundAllocation);
         assertEq(aliceBal, amount);
-        assertEq(balAfter, balBefore + allocation);
+        assertEq(balAfter, balBefore + roundAllocation);
     }
 
     function createRound(uint256 target, uint256 allocation) public {

@@ -35,6 +35,8 @@ contract InvestmentManager is
     bytes32 internal constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     /// @dev AccessControl Upgrader Role
     bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    /// @dev AccessControl Allocator Role
+    bytes32 internal constant ALLOCATOR_ROLE = keccak256("ALLOCATOR_ROLE");
 
     /// @dev governance token instance
     IYODA internal ecosystemToken;
@@ -99,6 +101,7 @@ contract InvestmentManager is
             _grantRole(DEFAULT_ADMIN_ROLE, guardian);
             _grantRole(MANAGER_ROLE, timelock_);
             _grantRole(PAUSER_ROLE, guardian);
+            _grantRole(ALLOCATOR_ROLE, guardian);
             ecosystemToken = IYODA(payable(token));
             wethContract = IWETH9(payable(weth_));
 
@@ -143,6 +146,33 @@ contract InvestmentManager is
         Round memory item = Round(ethTarget, 0, tokenAlloc, 0, start, end, 1);
         rounds.push(item);
         emit CreateRound(SafeCast.toUint32(rounds.length - 1), start, duration, ethTarget, tokenAlloc);
+    }
+
+    /**
+     * @dev Green list investors and allocation post KYC.
+     * @param round_ round number in question
+     * @param src investor address
+     * @param amountETH amount of ETH to invest
+     * @param amountToken token allocation
+     */
+    function addInvestorAllocation(uint32 round_, address src, uint256 amountETH, uint256 amountToken)
+        external
+        onlyRole(ALLOCATOR_ROLE)
+    {
+        if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
+        Investment storage investment = investorAllocations[round_][src];
+        investment.etherAmount = amountETH;
+        investment.tokenAmount = amountToken;
+    }
+
+    /**
+     * @dev Green list investors and allocation post KYC.
+     * @param round_ round number in question
+     * @param src investor address
+     */
+    function removeInvestorAllocation(uint32 round_, address src) external onlyRole(ALLOCATOR_ROLE) {
+        if (round_ >= rounds.length) revert CustomError("INVALID_ROUND");
+        delete investorAllocations[round_][src];
     }
 
     /**
@@ -258,6 +288,16 @@ contract InvestmentManager is
     }
 
     /**
+     * @dev Getter ruturns investor allocation info.
+     * @param round_ round number in question
+     * @param src investor address
+     * @return returns Investment object
+     */
+    function getInvestorAllocation(uint32 round_, address src) external view returns (IINVESTOR.Investment memory) {
+        return investorAllocations[round_][src];
+    }
+
+    /**
      * @dev Getter ruturns the round's min invest amount.
      * @param round_ round number in question
      * @return returns min invest amount (ETH)
@@ -284,10 +324,11 @@ contract InvestmentManager is
      */
     function invest(uint32 round_, uint256 amount) internal {
         Round storage item = rounds[round_];
-
-        if (amount < item.etherTarget / 50) {
+        Investment storage investment = investorAllocations[round_][msg.sender];
+        if (investment.etherAmount != amount) {
             revert CustomError("INVALID_AMOUNT");
         }
+
         if (item.etherInvested + amount > item.etherTarget) {
             revert CustomError("ROUND_OVERSUBSCRIBED");
         }
@@ -298,14 +339,9 @@ contract InvestmentManager is
             ipos[round_][msg.sender] = investors_[round_].length;
         }
 
-        uint256 tokenAmount = (item.tokenAllocation * amount) / item.etherTarget;
-
-        totalAllocation += tokenAmount;
-        item.etherInvested += amount;
         item.participants = investors_[round_].length;
-        Investment storage investment = investorAllocations[round_][msg.sender];
-        investment.etherAmount += amount;
-        investment.tokenAmount += tokenAmount;
+        item.etherInvested += amount;
+        totalAllocation += investment.tokenAmount;
 
         emit Invest(round_, msg.sender, amount);
         if (item.etherInvested == item.etherTarget) emit RoundComplete(round_);

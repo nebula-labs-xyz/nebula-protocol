@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 /**
- * @title Yoda Governance Token
+ * @title Lendefi Governance Token
  * @notice Burnable contract that votes and has BnM-Bridge functionality, UUPSUpgradeable,
- * @author Nebula Labs Inc
+ * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz
  */
 
@@ -83,11 +83,11 @@ contract GovernanceToken is
      * @param guardian admin address
      */
     function initializeUUPS(address guardian) external initializer {
-        __ERC20_init("Yoda Coin", "YODA");
+        __ERC20_init("Lendefi Coin", "LENDEFI");
         __ERC20Burnable_init();
         __ERC20Pausable_init();
         __AccessControl_init();
-        __ERC20Permit_init("Yoda Coin");
+        __ERC20Permit_init("Lendefi Coin");
         __ERC20Votes_init();
         __UUPSUpgradeable_init();
 

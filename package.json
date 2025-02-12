@@ -43,7 +43,7 @@
     "ds-test": "github:dapphub/ds-test#e282159",
     "forge-std": "github:foundry-rs/forge-std#4513bc2",
     "husky": "^8.0.0",
-    "lint-staged": "15.2.2",
+    "lint-staged": "^15.4.3",
     "solhint": "github:solhint-community/solhint-community#v4.0.0-rc01",
     "sort-package-json": "2.8.0"
   }

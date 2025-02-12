@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.23;
 /**
- * @title Yoda Ecosystem Team Manager
+ * @title Lendefi Ecosystem Team Manager
  * @notice Creates team vesting contracts
- * @author Nebula Labs Inc
+ * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz
  */
 
-import {IYODA} from "../interfaces/IYODA.sol";
+import {ILENDEFI} from "../interfaces/ILendefi.sol";
 import {ITEAMMANAGER} from "../interfaces/ITeamManager.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20 as TH} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -34,7 +34,7 @@ contract TeamManager is
     /// @dev AccessControl Upgrader Role
     bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     /// @dev governance token instance
-    IYODA internal ecosystemToken;
+    ILENDEFI internal ecosystemToken;
     /// @dev amount of ecosystem tokens in the contract
     uint256 public supply;
     /// @dev amount of tokens allocated so far
@@ -70,7 +70,7 @@ contract TeamManager is
             _grantRole(MANAGER_ROLE, timelock_);
 
             timelock = timelock_;
-            ecosystemToken = IYODA(payable(token));
+            ecosystemToken = ILENDEFI(payable(token));
             supply = (ecosystemToken.initialSupply() * 18) / 100;
             ++version;
             emit Initialized(msg.sender);

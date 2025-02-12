@@ -7,7 +7,7 @@ pragma solidity 0.8.23;
  * @custom:security-contact security@nebula-labs.xyz
  */
 
-import {IYODA} from "../interfaces/IYODA.sol";
+import {ILENDEFI} from "../interfaces/ILendefi.sol";
 import {IECOSYSTEM} from "../interfaces/IEcosystem.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20 as TH} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -39,7 +39,7 @@ contract EcosystemV2 is
     bytes32 internal constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     /// @dev governance token instance
-    IYODA internal tokenInstance;
+    ILENDEFI internal tokenInstance;
     /// @dev starting reward supply
     uint256 public rewardSupply;
     /// @dev maximal one time reward amount
@@ -81,7 +81,7 @@ contract EcosystemV2 is
             _grantRole(DEFAULT_ADMIN_ROLE, guardian);
             _grantRole(PAUSER_ROLE, pauser);
 
-            tokenInstance = IYODA(payable(token));
+            tokenInstance = ILENDEFI(payable(token));
             uint256 initialSupply = tokenInstance.initialSupply();
             rewardSupply = (initialSupply * 26) / 100;
             airdropSupply = (initialSupply * 10) / 100;

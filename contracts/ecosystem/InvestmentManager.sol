@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.23;
 /**
- * @title Yoda Ecosystem Investment manager
- * @notice Handles investment rounds and vesting contracts
- * @author Nebula Labs Inc
+ * @title Lendefi Ecosystem Investment manager
+ * @notice Handles privaste placements and vesting contracts
+ * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz
  */
 
-import {IYODA} from "../interfaces/IYODA.sol";
+import {ILENDEFI} from "../interfaces/ILendefi.sol";
 import {IWETH9} from "../interfaces/IWETH9.sol";
 import {IINVESTOR} from "../interfaces/IInvestmentManager.sol";
 import {InvestorVesting} from "./InvestorVesting.sol";
@@ -39,7 +39,7 @@ contract InvestmentManager is
     bytes32 internal constant ALLOCATOR_ROLE = keccak256("ALLOCATOR_ROLE");
 
     /// @dev governance token instance
-    IYODA internal ecosystemToken;
+    ILENDEFI internal ecosystemToken;
     /// @dev WETH token instance
     IWETH9 internal wethContract;
     /// @dev timelock address
@@ -102,7 +102,7 @@ contract InvestmentManager is
             _grantRole(MANAGER_ROLE, timelock_);
             _grantRole(PAUSER_ROLE, guardian);
             _grantRole(ALLOCATOR_ROLE, guardian);
-            ecosystemToken = IYODA(payable(token));
+            ecosystemToken = ILENDEFI(payable(token));
             wethContract = IWETH9(payable(weth_));
 
             timelock = timelock_;

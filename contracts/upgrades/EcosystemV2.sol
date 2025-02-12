@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.23;
 /**
- * @title Yoda EcosystemV2 Contract
+ * @title Lendefi DAO EcosystemV2 Contract
  * @notice Ecosystem contract handles airdrops, rewards, burning, and partnerships
- * @author Nebula Labs Inc
+ * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz
  */
 
@@ -74,10 +74,11 @@ contract EcosystemV2 is
      * @param pauser pauser address
      */
     function initialize(address token, address guardian, address pauser) external initializer {
+        __Pausable_init();
+        __AccessControl_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         if (token != address(0x0) && guardian != address(0x0) && pauser != address(0x0)) {
-            __Pausable_init();
-            __AccessControl_init();
-            __UUPSUpgradeable_init();
             _grantRole(DEFAULT_ADMIN_ROLE, guardian);
             _grantRole(PAUSER_ROLE, pauser);
 

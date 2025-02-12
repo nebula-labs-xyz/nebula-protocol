@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 /**
- * @title Yoda GovernanceTokenV2
+ * @title Lendefi DAO GovernanceTokenV2
  * @notice Burnable contract that votes and has BnM-Bridge functionality
- * @author Nebula Labs Inc
+ * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz
  */
 

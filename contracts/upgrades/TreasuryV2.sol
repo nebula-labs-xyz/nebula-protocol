@@ -2,10 +2,10 @@
 // Derived from OpenZeppelin Contracts (last updated v5.0.0) (finance/VestingWallet.sol)
 pragma solidity 0.8.23;
 /**
- * @title Yoda TreasuryV2 Contract
+ * @title Lendefi DAO TreasuryV2 Contract
  * @notice Vesting contract: initialRelease + (36 month duration)
  * @notice Offers flexible withdrawal schedule (gas efficient)
- * @author Nebula Labs Inc
+ * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz
  */
 
@@ -62,11 +62,11 @@ contract TreasuryV2 is
      * @param timelock address of timelock contract
      */
     function initialize(address guardian, address timelock) external initializer {
+        __Pausable_init();
+        __AccessControl_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         if (guardian != address(0x0) && timelock != address(0x0)) {
-            __Pausable_init();
-            __AccessControl_init();
-            __UUPSUpgradeable_init();
-
             require(guardian != address(0x0), "ZERO_ADDRESS");
             _grantRole(DEFAULT_ADMIN_ROLE, guardian);
             require(timelock != address(0x0), "ZERO_ADDRESS");

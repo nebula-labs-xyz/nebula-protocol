@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 /**
- * @title Lendefi Governance Token
+ * @title Lendefi DAO Governance Token
  * @notice Burnable contract that votes and has BnM-Bridge functionality, UUPSUpgradeable,
  * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.23;
 /**
- * @title Yoda BnM-Bridge Contract
+ * @title Lendefi DAO BnM-Bridge Contract
  * @notice Creates BnM-Bridge
- * @author Nebula Labs Inc
+ * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz
  */
 

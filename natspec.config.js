@@ -4,10 +4,8 @@
 
 /** @type {import('@defi-wonderland/natspec-smells').Config} */
 module.exports = {
-  include: 'contracts/lender/',
   include: 'contracts/bridge/',
   include: 'contracts/ecosystem/',
-  include: 'contracts/liquidator/',
   include: 'contracts/upgrades/',
   include: 'contracts/interfaces/',
   exclude: 'contracts/vendor/**/',

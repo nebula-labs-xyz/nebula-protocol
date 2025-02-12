@@ -1,18 +1,18 @@
-# Nebula Protocol
+# Lendefi DAO
 
 ```
-      ,,       ,,  ,,    ,,,    ,,   ,,,      ,,,    ,,,   ,,,          ,,,
-     ███▄     ██  ███▀▀▀███▄   ██▄██▀▀██▄    ██▌     ██▌  ██▌        ▄▄███▄▄
-    █████,   ██  ██▌          ██▌     └██▌  ██▌     ██▌  ██▌        ╟█   ╙██
-    ██ └███ ██  ██▌└██╟██   l███▀▄███╟█    ██      ╟██  ╟█i        ▐█▌█▀▄██╟
-   ██   ╙████  ██▌          ██▌     ,██▀   ╙██    ▄█▀  ██▌        ▐█▌    ██
-  ██     ╙██  █████▀▀▄██▀  ██▌██▌╙███▀`     ▀██▄██▌   █████▀▄██▀ ▐█▌    ██╟
- ¬─      ¬─   ¬─¬─  ¬─¬─'  ¬─¬─¬─¬ ¬─'       ¬─¬─    '¬─   '─¬   ¬─     ¬─'
+ *      ,,,          ,,     ,,,    ,,,      ,,   ,,,  ,,,      ,,,    ,,,   ,,,    ,,,   ,,,
+ *      ██▌          ███▀▀▀███▄   ███▄     ██   ██▄██▀▀██▄     ███▀▀▀███▄   ██▄██▀▀██▄  ▄██╟
+ *     ██▌          ██▌          █████,   ██   ██▌     └██▌   ██▌          ██▌          ██
+ *    ╟█l          ███▀▄███     ██ └███  ██   l██       ██╟  ███▀▄███     ██▌└██╟██    ╟█i
+ *    ██▌         ██▌          ██    ╙████    ██▌     ,██▀  ██▌          ██▌           ██
+ *   █████▀▄██▀  █████▀▀▄██▀  ██      ╙██    ██▌██▌╙███▀`  █████▀▀▄██▀  ╙██          ╙██
+ *  ¬─     ¬─   ¬─¬─  ¬─¬─'  ¬─¬─     ¬─'   ¬─¬─   '¬─    '─¬   ¬─      ¬─'          ¬─'
 ```
 
 ## Introduction
 
-Nebula is a lending protocol designed for EVM blockchains by Nebula Labs.
+Lendefi is a lending protocol designed for EVM blockchains by Nebula Labs.
 It fixes several problems uncovered with current lending protocols such as
 Compound III, AAVE and MakerDAO. Using all the latest and greatest.
 For more information visit [Nebula Labs](https://nebula-labs.xyz).
@@ -51,8 +51,8 @@ foundryup
 then
 
 ```
-git clone https://github.com/nebula-labs-xyz/nebula-protocol
-cd nebula-protocol
+git clone https://github.com/nebula-labs-xyz/lendefi-protocol
+cd lendefi-dao
 
 npm install
 forge clean && forge build && forge test -vvv --ffi --gas-report

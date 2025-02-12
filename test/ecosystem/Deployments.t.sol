@@ -24,11 +24,7 @@ contract DeploymentsTest is BasicDeploy {
         deployGovernorUpgrade();
     }
 
-    function test_006_LendefiDeploy() public {
-        deployLendefiUpgrade();
-    }
-
-    function test_007_CompleteDeploy() public {
+    function test_006_CompleteDeploy() public {
         deployComplete();
         console.log("token:    ", address(tokenInstance));
         console.log("ecosystem:", address(ecoInstance));
@@ -37,7 +33,7 @@ contract DeploymentsTest is BasicDeploy {
         console.log("timelock: ", address(timelockInstance));
     }
 
-    function test_008_TGE() public {
+    function test_007_TGE() public {
         deployComplete();
         assertEq(tokenInstance.totalSupply(), 0);
         // this is the TGE

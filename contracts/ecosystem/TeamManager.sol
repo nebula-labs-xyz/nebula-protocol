@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.23;
 /**
- * @title Lendefi Ecosystem Team Manager
+ * @title Lendefi DAO Ecosystem Team Manager
  * @notice Creates team vesting contracts
  * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz
@@ -61,11 +61,11 @@ contract TeamManager is
      * @param guardian guardian address
      */
     function initialize(address token, address timelock_, address guardian) external initializer {
+        __Pausable_init();
+        __AccessControl_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         if (token != address(0x0) && timelock_ != address(0x0) && guardian != address(0x0)) {
-            __Pausable_init();
-            __AccessControl_init();
-            __UUPSUpgradeable_init();
-
             _grantRole(DEFAULT_ADMIN_ROLE, guardian);
             _grantRole(MANAGER_ROLE, timelock_);
 

@@ -2,7 +2,7 @@
 // Derived from OpenZeppelin Contracts (last updated v5.0.0) (finance/VestingWallet.sol)
 pragma solidity 0.8.23;
 /**
- * @title Lendefi Team Vesting Contract
+ * @title Lendefi DAO Team Vesting Contract
  * @notice Cancellable Vesting contract
  * @notice Offers flexible withdrawal schedule (gas efficient)
  * @author Nebula Labs LLC

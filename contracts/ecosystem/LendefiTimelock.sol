@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 /**
- * @title Lendefi Timelock
+ * @title Lendefi DAO Timelock
  * @notice Standard OZUpgradeable Timelock, small modification with UUPS
  * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz
@@ -45,7 +45,8 @@ contract LendefiTimelock is TimelockControllerUpgradeable, UUPSUpgradeable {
      * @param guardian address of guardian
      */
     function initialize(uint256 minDelay, address[] memory proposers, address[] memory executors, address guardian)
-        external
+        public
+        override
         initializer
     {
         ++version;

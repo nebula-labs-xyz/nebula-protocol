@@ -132,15 +132,15 @@ contract Lendefi is
         address timelock_,
         address guardian
     ) external initializer {
+        __ERC20_init("LENDEFI YIELD TOKEN", "LENDUSD");
+        __ERC20Pausable_init();
+        __AccessControl_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         if (
             usdc != address(0x0) && govToken != address(0x0) && ecosystem != address(0x0) && treasury_ != address(0x0)
                 && timelock_ != address(0x0) && guardian != address(0x0)
         ) {
-            __ERC20_init("LENDEFI YIELD TOKEN", "LENDUSD");
-            __ERC20Pausable_init();
-            __AccessControl_init();
-            __UUPSUpgradeable_init();
-
             _grantRole(DEFAULT_ADMIN_ROLE, guardian);
             _grantRole(PAUSER_ROLE, guardian);
             _grantRole(MANAGER_ROLE, timelock_);

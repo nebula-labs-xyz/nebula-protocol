@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 /**
- * @title Lendefi GovernorV2
+ * @title Lendefi DAO GovernorV2
  * @notice Standard OZUpgradeable governor, small modification with UUPS
  * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz

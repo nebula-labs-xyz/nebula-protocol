@@ -2,7 +2,7 @@
 pragma solidity ^0.8.23;
 
 import "forge-std/Test.sol"; // solhint-disable-line
-import {IYODA} from "../contracts/interfaces/IYODA.sol";
+import {IPROTOCOL} from "../contracts/interfaces/IProtocol.sol";
 import {USDC} from "../contracts/mock/USDC.sol";
 import {WETHPriceConsumerV3} from "../contracts/mock/WETHOracle.sol";
 import {WETH9} from "../contracts/vendor/canonical-weth/contracts/WETH9.sol";
@@ -11,16 +11,16 @@ import {IECOSYSTEM} from "../contracts/interfaces/IEcosystem.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Treasury} from "../contracts/ecosystem/Treasury.sol";
 import {TreasuryV2} from "../contracts/upgrades/TreasuryV2.sol";
-import {Nebula} from "../contracts/lender/Nebula.sol";
-import {NebulaV2} from "../contracts/upgrades/NebulaV2.sol";
+import {Lendefi} from "../contracts/lender/Lendefi.sol";
+import {LendefiV2} from "../contracts/upgrades/LendefiV2.sol";
 import {Ecosystem} from "../contracts/ecosystem/Ecosystem.sol";
 import {EcosystemV2} from "../contracts/upgrades/EcosystemV2.sol";
 import {GovernanceToken} from "../contracts/ecosystem/GovernanceToken.sol";
 import {GovernanceTokenV2} from "../contracts/upgrades/GovernanceTokenV2.sol";
-import {YodaGovernor} from "../contracts/ecosystem/YodaGovernor.sol";
-import {YodaGovernorV2} from "../contracts/upgrades/YodaGovernorV2.sol";
-import {YodaTimelock} from "../contracts/ecosystem/YodaTimelock.sol";
-import {YodaTimelockV2} from "../contracts/upgrades/YodaTimelockV2.sol";
+import {LendefiGovernor} from "../contracts/ecosystem/LendefiGovernor.sol";
+import {LendefiGovernorV2} from "../contracts/upgrades/LendefiGovernorV2.sol";
+import {LendefiTimelock} from "../contracts/ecosystem/LendefiTimelock.sol";
+import {LendefiTimelockV2} from "../contracts/upgrades/LendefiTimelockV2.sol";
 import {TimelockControllerUpgradeable} from
     "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
 import {Upgrades, Options} from "openzeppelin-foundry-upgrades/Upgrades.sol";
@@ -59,12 +59,12 @@ contract BasicDeploy is Test {
 
     GovernanceToken internal tokenInstance;
     Ecosystem internal ecoInstance;
-    YodaTimelock internal timelockInstance;
-    YodaGovernor internal govInstance;
+    LendefiTimelock internal timelockInstance;
+    LendefiGovernor internal govInstance;
     Treasury internal treasuryInstance;
     USDC internal usdcInstance; // mock usdc
     WETH9 internal wethInstance;
-    Nebula internal nebulaInstance;
+    Lendefi internal LendefiInstance;
     WETHPriceConsumerV3 internal oracleInstance;
     IERC20 usdc = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
@@ -144,9 +144,9 @@ contract BasicDeploy is Test {
         uint256 timelockDelay = 24 * 60 * 60;
         address[] memory temp = new address[](1);
         temp[0] = ethereum;
-        bytes memory data2 = abi.encodeCall(YodaTimelock.initialize, (timelockDelay, temp, temp, guardian));
-        address payable proxy2 = payable(Upgrades.deployUUPSProxy("YodaTimelock.sol", data2));
-        timelockInstance = YodaTimelock(proxy2);
+        bytes memory data2 = abi.encodeCall(LendefiTimelock.initialize, (timelockDelay, temp, temp, guardian));
+        address payable proxy2 = payable(Upgrades.deployUUPSProxy("LendefiTimelock.sol", data2));
+        timelockInstance = LendefiTimelock(proxy2);
         address tlImplementation = Upgrades.getImplementationAddress(proxy2);
         assertFalse(address(timelockInstance) == tlImplementation);
         //deploy Treasury
@@ -181,9 +181,9 @@ contract BasicDeploy is Test {
         uint256 timelockDelay = 24 * 60 * 60;
         address[] memory temp = new address[](1);
         temp[0] = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-        bytes memory data = abi.encodeCall(YodaTimelock.initialize, (timelockDelay, temp, temp, guardian));
-        address payable proxy = payable(Upgrades.deployUUPSProxy("YodaTimelock.sol", data));
-        YodaTimelock instance = YodaTimelock(proxy);
+        bytes memory data = abi.encodeCall(LendefiTimelock.initialize, (timelockDelay, temp, temp, guardian));
+        address payable proxy = payable(Upgrades.deployUUPSProxy("LendefiTimelock.sol", data));
+        LendefiTimelock instance = LendefiTimelock(proxy);
         address implAddressV1 = Upgrades.getImplementationAddress(proxy);
         assertFalse(address(instance) == implAddressV1);
         // upgrade Timelock
@@ -191,11 +191,11 @@ contract BasicDeploy is Test {
         instance.grantRole(UPGRADER_ROLE, managerAdmin);
 
         vm.startPrank(managerAdmin);
-        Upgrades.upgradeProxy(proxy, "YodaTimelockV2.sol", "", guardian);
+        Upgrades.upgradeProxy(proxy, "LendefiTimelockV2.sol", "", guardian);
         vm.stopPrank();
 
         address implAddressV2 = Upgrades.getImplementationAddress(proxy);
-        YodaTimelockV2 ecoInstanceV2 = YodaTimelockV2(proxy);
+        LendefiTimelockV2 ecoInstanceV2 = LendefiTimelockV2(proxy);
         assertEq(ecoInstanceV2.version(), 2);
         assertFalse(implAddressV2 == implAddressV1);
 
@@ -219,32 +219,32 @@ contract BasicDeploy is Test {
         uint256 timelockDelay = 24 * 60 * 60;
         address[] memory temp = new address[](1);
         temp[0] = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-        bytes memory data1 = abi.encodeCall(YodaTimelock.initialize, (timelockDelay, temp, temp, guardian));
-        address payable proxy1 = payable(Upgrades.deployUUPSProxy("YodaTimelock.sol", data1));
-        YodaTimelock instance = YodaTimelock(proxy1);
+        bytes memory data1 = abi.encodeCall(LendefiTimelock.initialize, (timelockDelay, temp, temp, guardian));
+        address payable proxy1 = payable(Upgrades.deployUUPSProxy("LendefiTimelock.sol", data1));
+        LendefiTimelock instance = LendefiTimelock(proxy1);
         address implAddressV1 = Upgrades.getImplementationAddress(proxy1);
         assertFalse(address(instance) == implAddressV1);
 
         // deploy Governor
         bytes memory data2 = abi.encodeCall(
-            YodaGovernor.initialize, (tokenInstance, TimelockControllerUpgradeable(payable(proxy1)), guardian)
+            LendefiGovernor.initialize, (tokenInstance, TimelockControllerUpgradeable(payable(proxy1)), guardian)
         );
-        address payable proxy2 = payable(Upgrades.deployUUPSProxy("YodaGovernor.sol", data2));
-        YodaGovernor govInstanceV1 = YodaGovernor(proxy2);
+        address payable proxy2 = payable(Upgrades.deployUUPSProxy("LendefiGovernor.sol", data2));
+        LendefiGovernor govInstanceV1 = LendefiGovernor(proxy2);
         address govImplAddressV1 = Upgrades.getImplementationAddress(proxy2);
         assertFalse(address(govInstanceV1) == govImplAddressV1);
         assertEq(govInstanceV1.uupsVersion(), 1);
 
         // upgrade Governor
-        Upgrades.upgradeProxy(proxy2, "YodaGovernorV2.sol", "", guardian);
+        Upgrades.upgradeProxy(proxy2, "LendefiGovernorV2.sol", "", guardian);
         address govImplAddressV2 = Upgrades.getImplementationAddress(proxy2);
 
-        YodaGovernorV2 govInstanceV2 = YodaGovernorV2(proxy2);
+        LendefiGovernorV2 govInstanceV2 = LendefiGovernorV2(proxy2);
         assertEq(govInstanceV2.uupsVersion(), 2);
         assertFalse(govImplAddressV2 == govImplAddressV1);
     }
 
-    function deployNebulaUpgrade() public {
+    function deployLendefiUpgrade() public {
         deployComplete();
         assertEq(tokenInstance.totalSupply(), 0);
         // this is the TGE
@@ -257,11 +257,11 @@ contract BasicDeploy is Test {
         assertEq(treasuryBal, 28_000_000 ether);
         assertEq(tokenInstance.totalSupply(), ecoBal + treasuryBal);
 
-        // Nebula deploy
+        // Lendefi deploy
         usdcInstance = new USDC();
 
         bytes memory data = abi.encodeCall(
-            Nebula.initialize,
+            Lendefi.initialize,
             (
                 address(usdcInstance),
                 address(tokenInstance),
@@ -271,29 +271,29 @@ contract BasicDeploy is Test {
                 guardian
             )
         );
-        address payable proxy = payable(Upgrades.deployUUPSProxy("Nebula.sol", data));
-        nebulaInstance = Nebula(proxy);
+        address payable proxy = payable(Upgrades.deployUUPSProxy("Lendefi.sol", data));
+        LendefiInstance = Lendefi(proxy);
         address implementationV1 = Upgrades.getImplementationAddress(proxy);
-        assertFalse(address(nebulaInstance) == implementationV1);
+        assertFalse(address(LendefiInstance) == implementationV1);
 
-        // upgrade Nebula
-        assertEq(nebulaInstance.version(), 1);
+        // upgrade Lendefi
+        assertEq(LendefiInstance.version(), 1);
         vm.prank(guardian);
-        nebulaInstance.grantRole(UPGRADER_ROLE, managerAdmin);
+        LendefiInstance.grantRole(UPGRADER_ROLE, managerAdmin);
 
         vm.startPrank(managerAdmin);
-        Upgrades.upgradeProxy(proxy, "NebulaV2.sol", "", guardian);
+        Upgrades.upgradeProxy(proxy, "LendefiV2.sol", "", guardian);
         vm.stopPrank();
 
         address implementationV2 = Upgrades.getImplementationAddress(proxy);
 
-        NebulaV2 nebulaInstanceV2 = NebulaV2(proxy);
-        assertEq(nebulaInstanceV2.version(), 2);
+        LendefiV2 LendefiInstanceV2 = LendefiV2(proxy);
+        assertEq(LendefiInstanceV2.version(), 2);
         assertFalse(implementationV2 == implementationV1);
 
         vm.prank(guardian);
-        nebulaInstance.revokeRole(UPGRADER_ROLE, managerAdmin);
-        assertTrue(nebulaInstance.hasRole(UPGRADER_ROLE, managerAdmin) == false);
+        LendefiInstance.revokeRole(UPGRADER_ROLE, managerAdmin);
+        assertTrue(LendefiInstance.hasRole(UPGRADER_ROLE, managerAdmin) == false);
     }
 
     function deployComplete() internal {
@@ -316,18 +316,18 @@ contract BasicDeploy is Test {
         uint256 timelockDelay = 24 * 60 * 60;
         address[] memory temp = new address[](1);
         temp[0] = ethereum;
-        bytes memory data2 = abi.encodeCall(YodaTimelock.initialize, (timelockDelay, temp, temp, guardian));
-        address payable proxy2 = payable(Upgrades.deployUUPSProxy("YodaTimelock.sol", data2));
-        timelockInstance = YodaTimelock(proxy2);
+        bytes memory data2 = abi.encodeCall(LendefiTimelock.initialize, (timelockDelay, temp, temp, guardian));
+        address payable proxy2 = payable(Upgrades.deployUUPSProxy("LendefiTimelock.sol", data2));
+        timelockInstance = LendefiTimelock(proxy2);
         address tlImplementation = Upgrades.getImplementationAddress(proxy2);
         assertFalse(address(timelockInstance) == tlImplementation);
 
         // governor deploy
         bytes memory data3 = abi.encodeCall(
-            YodaGovernor.initialize, (tokenInstance, TimelockControllerUpgradeable(payable(proxy2)), guardian)
+            LendefiGovernor.initialize, (tokenInstance, TimelockControllerUpgradeable(payable(proxy2)), guardian)
         );
-        address payable proxy3 = payable(Upgrades.deployUUPSProxy("YodaGovernor.sol", data3));
-        govInstance = YodaGovernor(proxy3);
+        address payable proxy3 = payable(Upgrades.deployUUPSProxy("LendefiGovernor.sol", data3));
+        govInstance = LendefiGovernor(proxy3);
         address govImplementation = Upgrades.getImplementationAddress(proxy3);
         assertFalse(address(govInstance) == govImplementation);
 

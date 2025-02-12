@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 /**
- * ,,       ,,  ,,    ,,,    ,,   ,,,      ,,,    ,,,   ,,,          ,,,
+ *      ,,       ,,  ,,    ,,,    ,,   ,,,      ,,,    ,,,   ,,,          ,,,
  *      ███▄     ██  ███▀▀▀███▄   ██▄██▀▀██▄    ██▌     ██▌  ██▌        ▄▄███▄▄
  *     █████,   ██  ██▌          ██▌     └██▌  ██▌     ██▌  ██▌        ╟█   ╙██
  *     ██ └███ ██  ██▌└██╟██   l███▀▄███╟█    ██      ╟██  ╟█i        ▐█▌█▀▄██╟
@@ -9,14 +9,22 @@ pragma solidity 0.8.23;
  *   ██     ╙██  █████▀▀▄██▀  ██▌██▌╙███▀`     ▀██▄██▌   █████▀▄██▀ ▐█▌    ██╟
  *  ¬─      ¬─   ¬─¬─  ¬─¬─'  ¬─¬─¬─¬ ¬─'       ¬─¬─    '¬─   '─¬   ¬─     ¬─'
  *
- * @title Nebula Protocol Liquidator
+ *      ,,,          ,,     ,,,    ,,,      ,,   ,,,  ,,,      ,,,    ,,,   ,,,    ,,,   ,,,
+ *      ██▌          ███▀▀▀███▄   ███▄     ██   ██▄██▀▀██▄     ███▀▀▀███▄   ██▄██▀▀██▄  ▄██╟
+ *     ██▌          ██▌          █████,   ██   ██▌     └██▌   ██▌          ██▌          ██
+ *    ╟█l          ███▀▄███     ██ └███  ██   l██       ██╟  ███▀▄███     ██▌└██╟██    ╟█i
+ *    ██▌         ██▌          ██    ╙████    ██▌     ,██▀  ██▌          ██▌           ██
+ *   █████▀▄██▀  █████▀▀▄██▀  ██      ╙██    ██▌██▌╙███▀`  █████▀▀▄██▀  ╙██           ╙██
+ *  ¬─     ¬─   ¬─¬─  ¬─¬─'  ¬─¬─     ¬─'   ¬─¬─   '¬─    '─¬   ¬─      ¬─'           ¬─'
+ *
+ * @title Lendefi Protocol Liquidator
  * @notice Liquidation contract example
- * @author Nebula Labs Inc
+ * @author Nebula Labs LLC
  * @disclaimer !!! USE AT YOUR OWN RISK !!!
  * @custom:security-contact security@nebula-labs.xyz
  */
 
-import {INEBULA} from "../interfaces/INebula.sol";
+import {IPROTOCOL} from "../interfaces/IProtocol.sol";
 import {IVault} from "../vendor/@balancer-labs/v2-interfaces/contracts/vault/IVault.sol";
 import {IFlashLoanRecipient} from "../vendor/@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol";
 import {ISwapRouter} from "../vendor/@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
@@ -29,8 +37,8 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
     /// @dev balancer vault instance
     /// @notice mainnet address 0xBA12222222228d8Ba445958a75a0704d566BF2C8
     IVault public immutable BALANCER_VAULT;
-    /// @dev Nebula instance
-    INEBULA public immutable NEBULA_INSTANCE;
+    /// @dev Lendefi instance
+    IPROTOCOL public immutable PROTOCOL_INSTANCE;
     /// @dev gov token instance
     IERC20 public immutable TOKEN_INSTANCE;
     /// @dev Uniswap router instance
@@ -52,7 +60,7 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
         Ownable(msg.sender)
     {
         USDC_INSTANCE = IERC20(usdc);
-        NEBULA_INSTANCE = INEBULA(payable(nebula));
+        PROTOCOL_INSTANCE = IPROTOCOL(payable(nebula));
         BALANCER_VAULT = IVault(balancerVault);
         UNISWAP_ROUTER = ISwapRouter(uniswapRouter); //uniswapV3
         TOKEN_INSTANCE = IERC20(govToken);
@@ -63,10 +71,10 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
      * @param account address
      */
     function liquidate(address account) external onlyOwner {
-        if (NEBULA_INSTANCE.isLiquidatable(account)) {
+        if (PROTOCOL_INSTANCE.isLiquidatable(account)) {
             require(TOKEN_INSTANCE.balanceOf(address(this)) >= 20_000 ether, "ERR_INSUFFIENT_LIQUIDATOR_TOKENS");
 
-            uint256 debt = NEBULA_INSTANCE.getAccruedDebt(account);
+            uint256 debt = PROTOCOL_INSTANCE.getAccruedDebt(account);
             uint256 liquidationFee = debt / 100;
             IERC20[] memory array = new IERC20[](1);
             array[0] = USDC_INSTANCE;
@@ -101,25 +109,25 @@ contract FlashLoanRecipient is IFlashLoanRecipient, Ownable {
         bytes memory userData
     ) external override onlyVault {
         address target = address(uint160(bytes20(userData)));
-        address[] memory assets = NEBULA_INSTANCE.getUserCollateralAssets(target);
+        address[] memory assets = PROTOCOL_INSTANCE.getUserCollateralAssets(target);
         uint256 len = assets.length;
 
         uint256[] memory tokenAmounts = new uint256[](len);
         for (uint256 i = 0; i < len; ++i) {
-            uint256 amount = NEBULA_INSTANCE.getCollateral(target, assets[i]);
+            uint256 amount = PROTOCOL_INSTANCE.getCollateral(target, assets[i]);
             if (amount > 0) {
                 tokenAmounts[i] = amount;
             }
         }
 
-        SafeERC20.forceApprove(USDC_INSTANCE, address(NEBULA_INSTANCE), amounts[0]);
-        NEBULA_INSTANCE.liquidate(target); // 🚩 🚩 🚩 🚩 🚩 //
+        SafeERC20.forceApprove(USDC_INSTANCE, address(PROTOCOL_INSTANCE), amounts[0]);
+        PROTOCOL_INSTANCE.liquidate(target); // 🚩 🚩 🚩 🚩 🚩 //
 
         uint256 recievedBase;
         for (uint256 i = 0; i < len; ++i) {
             if (tokenAmounts[i] > 0) {
-                INEBULA.Asset memory assetInfo = NEBULA_INSTANCE.getAssetInfo(assets[i]);
-                uint256 assetPrice = NEBULA_INSTANCE.getAssetPrice(assetInfo.oracleUSD);
+                IPROTOCOL.Asset memory assetInfo = PROTOCOL_INSTANCE.getAssetInfo(assets[i]);
+                uint256 assetPrice = PROTOCOL_INSTANCE.getAssetPrice(assetInfo.oracleUSD);
                 uint256 amountOutMin = (tokenAmounts[i] * assetPrice * 99) / 10 ** assetInfo.oracleDecimals / 100;
                 uint256 outAmount = uniswapV3(assets[i], tokenAmounts[i], amountOutMin);
                 recievedBase += outAmount;

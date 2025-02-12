@@ -2,7 +2,7 @@
 pragma solidity 0.8.23;
 /**
  * @title Vesting Interface
- * @author Nebula Labs Inc
+ * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz
  */
 

@@ -24,8 +24,8 @@ contract DeploymentsTest is BasicDeploy {
         deployGovernorUpgrade();
     }
 
-    function test_006_NebulaDeploy() public {
-        deployNebulaUpgrade();
+    function test_006_LendefiDeploy() public {
+        deployLendefiUpgrade();
     }
 
     function test_007_CompleteDeploy() public {

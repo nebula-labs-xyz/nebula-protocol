@@ -93,12 +93,6 @@ contract TreasuryTest is BasicDeploy {
         treasuryInstance.release(assetRecipient, 100 ether);
     }
 
-    // function test_Revert_SendEther_Branch2() public {
-    //     vm.prank(managerAdmin);
-    //     vm.expectRevert("ERR_ZERO_ADDRESS");
-    //     treasuryInstance.sendEther(address(0), 100 ether);
-    // }
-
     function test_Revert_ReleaseEther_Branch3() public {
         bytes memory expError = abi.encodeWithSignature("CustomError(string)", "NOT_ENOUGH_VESTED");
         vm.prank(managerAdmin);

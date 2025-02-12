@@ -2,10 +2,10 @@
 // Derived from OpenZeppelin Contracts (last updated v5.0.0) (finance/VestingWallet.sol)
 pragma solidity 0.8.23;
 /**
- * @title Yoda Investor Vesting Contract
+ * @title Lendefi Investor Vesting Contract
  * @notice Investor Vesting contract
  * @notice Offers flexible withdrawal schedule (gas efficient)
- * @author Nebula Labs Inc
+ * @author Nebula Labs LLC
  * @custom:security-contact security@nebula-labs.xyz
  */
 
